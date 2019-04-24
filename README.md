@@ -1,2 +1,2 @@
-# CloudDJ Server
-Node.js server for the CloudDJ project.
+# Horizont Server
+Node.js server for the Horizont project.
