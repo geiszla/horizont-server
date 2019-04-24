@@ -6,7 +6,7 @@ const {
   GraphQLString,
 } = require('graphql');
 
-const { addDiscussionByUrl } = require('./news');
+const { addDiscussionByUrl } = require('./discussions');
 
 // Queries
 const queryType = new GraphQLObjectType({
@@ -27,6 +27,7 @@ const mutationType = new GraphQLObjectType({
       type: new GraphQLNonNull(GraphQLBoolean),
       args: {
         url: { type: new GraphQLNonNull(GraphQLString) },
+        username: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { url, username }) => new Promise((resolve) => {
         addDiscussionByUrl(url, username, resolve);

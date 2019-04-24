@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const shortid = require('shortid');
+
 const { printError } = require('./utilities');
 
 mongoose.Promise = Promise;
@@ -62,12 +64,12 @@ exports.NewsSource = mongoose.model('NewsSource', newsSourceSchema);
 // Discussions
 const discussionSchema = new mongoose.Schema({
   comments: [commentSchema],
-  createdAt: Date,
   description: String,
   image: String,
   isOpen: Boolean,
   location: locationSchema,
   owner: String,
+  shortId: { type: String, default: shortid.generate },
   title: String,
   url: String,
   usersAgreed: [String],

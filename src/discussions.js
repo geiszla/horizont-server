@@ -1,20 +1,22 @@
 const domino = require('domino');
 const { getMetadata, metadataRuleSets } = require('page-metadata-parser');
-const request = require('request-promise').defaults({ proxy: 'http://localhost:3128/' });
+const requestPromise = require('request-promise');
 
 const { Discussion } = require('./database');
+
+const request = requestPromise.defaults({
+  proxy: 'http://localhost:3128/',
+  headers: { 'User-Agent': 'Horizont-News' },
+});
 
 exports.addDiscussionByUrl = async (url, user, callback) => {
   let newDiscussion;
 
   try {
     newDiscussion = new Discussion({
-      comments: [],
       createdAt: new Date(),
       owner: user,
       url,
-      usersAgreed: [],
-      usersDisagreed: [],
     });
 
     const discussionData = await getDiscussionData(newDiscussion);
@@ -26,7 +28,6 @@ exports.addDiscussionByUrl = async (url, user, callback) => {
     callback(false);
   }
 };
-
 
 async function getDiscussionData(discussion) {
   if (!discussion.url) {
