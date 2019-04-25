@@ -11,9 +11,29 @@ const path = require('path');
 const session = require('express-session');
 global.Promise = require('bluebird');
 
+const { print, printError, setWorkerId } = require('./src/utilities');
+
+require('./src/error');
+
+// Handled promise rejection logging
+global.Promise = new Proxy(global.Promise, {
+  get(target, propKey, receiver) {
+    const targetValue = Reflect.get(target, propKey, receiver);
+
+    if (typeof targetValue === 'function' && propKey === 'reject') {
+      return (...args) => {
+        printError(`Handled promise rejection: ${args[0].message}`);
+
+        return targetValue.apply(this, args); // (A)
+      };
+    }
+
+    return targetValue;
+  },
+});
+
 const database = require('./src/database');
 const graphQLSchema = require('./src/api');
-const { print, printError, setWorkerId } = require('./src/utilities');
 
 
 /* -------------------------------------- Global Constants -------------------------------------- */
