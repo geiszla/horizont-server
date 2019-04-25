@@ -9,23 +9,45 @@ const request = requestPromise.defaults({
   headers: { 'User-Agent': 'Horizont-News' },
 });
 
-exports.addDiscussionByUrl = async (url, user, callback) => {
+exports.addDiscussionByUrl = async (url, resolve, reject) => {
   let newDiscussion;
 
   try {
-    newDiscussion = new Discussion({
+    newDiscussion = await new Discussion({
       createdAt: new Date(),
-      owner: user,
+      owner: 'testuser',
       url,
-    });
+    }).save();
 
     const discussionData = await getDiscussionData(newDiscussion);
     newDiscussion = Object.assign(newDiscussion, discussionData);
 
     await newDiscussion.save();
-    callback(true);
-  } catch (_) {
-    callback(false);
+    resolve();
+  } catch ({ message }) {
+    reject('An error occurred while creating discussion.');
+  }
+};
+
+exports.postComment = async (text, discussionId, resolve, reject) => {
+  const discussion = await Discussion.findOne({ shortId: discussionId }).exec();
+
+  if (!discussion) {
+    reject('Post does not exist.');
+    return;
+  }
+
+  try {
+    discussion.comments.push({
+      text,
+      user: 'testuser',
+      postedAt: new Date(),
+    });
+    discussion.save();
+
+    resolve();
+  } catch ({ message }) {
+    reject('An error occurred while posting comment.');
   }
 };
 

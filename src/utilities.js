@@ -1,16 +1,24 @@
 const localeOptions = { hour12: false };
+let workerId;
 
-exports.print = (text) => {
-  const timeStamp = new Date().toLocaleString('en-US', localeOptions);
-  console.error(`[${timeStamp}][Info] ${text}`);
+const prefixes = {
+  log: 'Info',
+  warn: 'Warning',
+  error: 'Error',
 };
 
-exports.printWarning = (text) => {
-  const timeStamp = new Date().toLocaleString('en-US', localeOptions);
-  console.warn(`[${timeStamp}][Warning] ${text}`);
+exports.setWorkerId = (id) => {
+  workerId = id;
 };
 
-exports.printError = (text) => {
+exports.print = (text, isVerboseLogging) => outputToConsole(text, 'log', isVerboseLogging);
+exports.printWarning = (text, isVerboseLogging) => outputToConsole(text, 'warn', isVerboseLogging);
+exports.printError = (text, isVerboseLogging) => outputToConsole(text, 'error', isVerboseLogging);
+
+function outputToConsole(text, methodName) {
   const timeStamp = new Date().toLocaleString('en-US', localeOptions);
-  console.log(`[${timeStamp}][Error] ${text}`);
-};
+  const workerPrefix = workerId ? `[${workerId}]` : '';
+  const prefix = `[${timeStamp}]${workerPrefix}[${prefixes[methodName]}]`;
+
+  console[methodName](prefix, text);
+}

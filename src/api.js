@@ -6,7 +6,7 @@ const {
   GraphQLString,
 } = require('graphql');
 
-const { addDiscussionByUrl } = require('./discussions');
+const { addDiscussionByUrl, postComment } = require('./discussions');
 
 // Queries
 const queryType = new GraphQLObjectType({
@@ -24,13 +24,22 @@ const mutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: {
     addDiscussionByUrl: {
-      type: new GraphQLNonNull(GraphQLBoolean),
+      type: GraphQLBoolean,
       args: {
         url: { type: new GraphQLNonNull(GraphQLString) },
-        username: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { url, username }) => new Promise((resolve) => {
-        addDiscussionByUrl(url, username, resolve);
+      resolve: (_, { url }) => new Promise((resolve, reject) => {
+        addDiscussionByUrl(url, resolve, reject);
+      }),
+    },
+    postComment: {
+      type: GraphQLBoolean,
+      args: {
+        text: { type: new GraphQLNonNull(GraphQLString) },
+        discussionId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { text, discussionId }) => new Promise((resolve, reject) => {
+        postComment(text, discussionId, resolve, reject);
       }),
     },
   },
