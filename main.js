@@ -9,20 +9,22 @@ const graphqlHTTP = require('express-graphql');
 const https = require('https');
 const path = require('path');
 const session = require('express-session');
+global.Promise = require('bluebird');
 
 const database = require('./src/database');
 const graphQLSchema = require('./src/api');
 const { print, printError, setWorkerId } = require('./src/utilities');
 
-// Use bluebird Promise library
-global.Promise = require('bluebird');
 
-// Global constants
+/* -------------------------------------- Global Constants -------------------------------------- */
+
 const webserverPort = 8080;
 const databaseAddress = 'localhost:27017';
 const isProduction = process.argv[2] === 'production';
 
-// Set up workers
+
+/* ----------------------------------------- Clustering ----------------------------------------- */
+
 const workers = [];
 if (isProduction && cluster.isMaster) {
   setWorkerId(0);
@@ -32,11 +34,10 @@ if (isProduction && cluster.isMaster) {
     setWorkerId(cluster.worker.process.pid);
   }
 
-  // Run server setup synchronously
+  // Run server setup
   main(cluster.worker && cluster.worker.id > cpuCount);
 }
 
-// Clustering
 function setUpWorkers() {
   // Create same number of workers as CPU cores available
   print(`Starting ${cpuCount} workers...`);
@@ -65,7 +66,9 @@ function setUpWorkers() {
   });
 }
 
-// Handle worker messages to the master
+
+/* ----------------------------------- Worker Message Handling ---------------------------------- */
+
 let dbConnectionCount = 0;
 let webserverInstanceCount = 0;
 
@@ -96,7 +99,9 @@ function handleWorkerMessage(message) {
   }
 }
 
-// Webserver
+
+/* ------------------------------------------ Webserver ----------------------------------------- */
+
 async function main(isForceLogging) {
   const isLoggingEnabled = !isProduction || isForceLogging;
 
@@ -131,7 +136,7 @@ async function main(isForceLogging) {
   app.use(
     '/api',
     (req, _, next) => {
-      print(`GraphQL API request: ${req.body.operationName}`);
+      print(`GraphQL API request: ${req.body.operationName || '[GET GraphiQL]'}`);
       next();
     },
     graphqlHTTP(req => ({
@@ -148,11 +153,11 @@ async function main(isForceLogging) {
     passphrase: 'iManT',
   };
 
-  https.createServer(options, app).listen(webserverPort);
-
-  if (isLoggingEnabled) {
-    print(`Webserver is listening at https://localhost:${webserverPort}/\n`);
-  } else {
-    process.send({ type: 'webserver', data: 'online' });
-  }
+  https.createServer(options, app).listen(webserverPort, () => {
+    if (isLoggingEnabled) {
+      print(`Webserver is listening at https://localhost:${webserverPort}/\n`);
+    } else {
+      process.send({ type: 'webserver', data: 'online' });
+    }
+  });
 }

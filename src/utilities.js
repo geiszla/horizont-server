@@ -11,14 +11,19 @@ exports.setWorkerId = (id) => {
   workerId = id;
 };
 
-exports.print = (text, isVerboseLogging) => outputToConsole(text, 'log', isVerboseLogging);
-exports.printWarning = (text, isVerboseLogging) => outputToConsole(text, 'warn', isVerboseLogging);
-exports.printError = (text, isVerboseLogging) => outputToConsole(text, 'error', isVerboseLogging);
+exports.print = (text, object) => outputToConsole(text, 'log', object);
+exports.printWarning = (text, object) => outputToConsole(text, 'warn', object);
+exports.printError = (text, object) => outputToConsole(text, 'error', object);
 
-function outputToConsole(text, methodName) {
+function outputToConsole(text, methodName, object) {
   const timeStamp = new Date().toLocaleString('en-US', localeOptions);
   const workerPrefix = workerId ? `[${workerId}]` : '';
   const prefix = `[${timeStamp}]${workerPrefix}[${prefixes[methodName]}]`;
 
   console[methodName](prefix, text);
+
+  if (object !== undefined) {
+    console[methodName](object);
+    console.log();
+  }
 }

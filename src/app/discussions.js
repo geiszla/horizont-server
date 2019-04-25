@@ -2,7 +2,7 @@ const domino = require('domino');
 const { getMetadata, metadataRuleSets } = require('page-metadata-parser');
 const requestPromise = require('request-promise');
 
-const { Discussion } = require('./database');
+const { Discussion } = require('../database');
 
 const request = requestPromise.defaults({
   proxy: 'http://localhost:3128/',

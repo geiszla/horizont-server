@@ -6,7 +6,7 @@ const {
   GraphQLString,
 } = require('graphql');
 
-const { addDiscussionByUrl, postComment } = require('./discussions');
+const { addDiscussionByUrl, postComment } = require('./app/discussions');
 
 // Queries
 const queryType = new GraphQLObjectType({
@@ -44,5 +44,6 @@ const mutationType = new GraphQLObjectType({
     },
   },
 });
+
 
 module.exports = new GraphQLSchema({ query: queryType, mutation: mutationType });
