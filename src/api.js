@@ -8,7 +8,9 @@ const {
 
 const { addDiscussionByUrl, postComment } = require('./app/discussions');
 
-// Queries
+
+/* ------------------------------------------ Queries ------------------------------------------- */
+
 const queryType = new GraphQLObjectType({
   name: 'Query',
   fields: {
@@ -19,7 +21,9 @@ const queryType = new GraphQLObjectType({
   },
 });
 
-// Mutations
+
+/* ----------------------------------------- Mutations ------------------------------------------ */
+
 const mutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: {

@@ -61,6 +61,12 @@ const discussionSchema = new mongoose.Schema({
   usersDisagreed: [String],
 });
 
+discussionSchema.index({ createdAt: -1, isOpen: -1 });
+discussionSchema.index({ owner: 1, isOpen: -1 });
+discussionSchema.index({ 'location.coordinates': '2d' });
+
+exports.Discussion = mongoose.model('Discussion', discussionSchema);
+
 
 /* ------------------------------------ News Sources Schema ------------------------------------- */
 
@@ -75,9 +81,3 @@ newsSourceSchema.index({ 'articles.usersAgreed': 1 });
 newsSourceSchema.index({ 'articles.usersDisagreed': -1 });
 
 exports.NewsSource = mongoose.model('NewsSource', newsSourceSchema);
-
-discussionSchema.index({ createdAt: -1, isOpen: -1 });
-discussionSchema.index({ owner: 1, isOpen: -1 });
-newsSourceSchema.index({ 'article.location.coordinates': '2d' });
-
-exports.Discussion = mongoose.model('Discussion', discussionSchema);

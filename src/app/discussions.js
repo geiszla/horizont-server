@@ -42,11 +42,13 @@ exports.postComment = async (text, discussionId, resolve, reject) => {
   }
 
   try {
+    // Add comment to discussion
     discussion.comments.push({
       text,
       user: 'testuser',
       postedAt: new Date(),
     });
+    // Save discussion
     discussion.save();
 
     resolve();
