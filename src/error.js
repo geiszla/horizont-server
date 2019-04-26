@@ -25,6 +25,7 @@ process.on('rejectionHandled', (promise) => {
   print(`Rejection handled (${promise._bitField}).`);
 });
 
+// Log all unhandled rejections before exiting
 process.on('exit', () => {
   if (unhandledPromises.length > 0) {
     const rejections = unhandledPromises.map(promise => promise.reason);
@@ -41,7 +42,7 @@ global.Promise = new Proxy(global.Promise, {
       return (...args) => {
         printError(`Handled promise rejection: ${args[0].message}`);
 
-        return targetValue.apply(this, args); // (A)
+        return targetValue.apply(this, args);
       };
     }
 
