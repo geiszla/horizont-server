@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 const shortid = require('shortid');
 
-const { printError } = require('./utilities');
+const { printError } = require('./logging');
 
 mongoose.Promise = Promise;
 
-// Connect
+/* ----------------------------------- Database Communication ----------------------------------- */
+
 exports.connect = async (address) => {
   try {
     await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
@@ -16,7 +17,9 @@ exports.connect = async (address) => {
   }
 };
 
-// User definitions
+
+/* ---------------------------------------- User Schema ----------------------------------------- */
+
 const userSchema = new mongoose.Schema({
   username: String,
   password: String,
@@ -27,7 +30,9 @@ userSchema.index({ username: 1 });
 
 exports.User = mongoose.model('User', userSchema);
 
-// News definitions
+
+/* ------------------------------------ Discussion Schema --------------------------------------- */
+
 const commentSchema = new mongoose.Schema({
   image: String,
   lastEditedAt: Date,
@@ -48,19 +53,6 @@ const locationSchema = new mongoose.Schema({
   name: String,
 });
 
-// News sources
-const newsSourceSchema = new mongoose.Schema({
-  articles: [mongoose.Schema.ObjectId],
-  isUser: Boolean,
-  name: String,
-  url: String,
-});
-
-newsSourceSchema.index({ 'articles.usersAgreed': 1 });
-newsSourceSchema.index({ 'articles.usersDisagreed': -1 });
-
-exports.NewsSource = mongoose.model('NewsSource', newsSourceSchema);
-
 // Discussions
 const discussionSchema = new mongoose.Schema({
   comments: [commentSchema],
@@ -75,6 +67,21 @@ const discussionSchema = new mongoose.Schema({
   usersAgreed: [String],
   usersDisagreed: [String],
 });
+
+
+/* ------------------------------------ News Sources Schema ------------------------------------- */
+
+const newsSourceSchema = new mongoose.Schema({
+  articles: [mongoose.Schema.ObjectId],
+  isUser: Boolean,
+  name: String,
+  url: String,
+});
+
+newsSourceSchema.index({ 'articles.usersAgreed': 1 });
+newsSourceSchema.index({ 'articles.usersDisagreed': -1 });
+
+exports.NewsSource = mongoose.model('NewsSource', newsSourceSchema);
 
 discussionSchema.index({ createdAt: -1, isOpen: -1 });
 discussionSchema.index({ owner: 1, isOpen: -1 });

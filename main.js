@@ -1,39 +1,12 @@
-const bodyParser = require('body-parser');
 const cluster = require('cluster');
-const compression = require('compression');
-const cookieParser = require('cookie-parser');
 const cpuCount = require('physical-cpu-count');
-const express = require('express');
-const fs = require('fs');
-const graphqlHTTP = require('express-graphql');
-const https = require('https');
-const path = require('path');
-const session = require('express-session');
 global.Promise = require('bluebird');
 
-const { print, printError, setWorkerId } = require('./src/utilities');
-
+// Set up error handling before local modules are loaded
 require('./src/error');
 
-// Handled promise rejection logging
-global.Promise = new Proxy(global.Promise, {
-  get(target, propKey, receiver) {
-    const targetValue = Reflect.get(target, propKey, receiver);
-
-    if (typeof targetValue === 'function' && propKey === 'reject') {
-      return (...args) => {
-        printError(`Handled promise rejection: ${args[0].message}`);
-
-        return targetValue.apply(this, args); // (A)
-      };
-    }
-
-    return targetValue;
-  },
-});
-
-const database = require('./src/database');
-const graphQLSchema = require('./src/api');
+const { print, printError, setWorkerId } = require('./src/logging');
+const createServerAsync = require('./src/webserver');
 
 
 /* -------------------------------------- Global Constants -------------------------------------- */
@@ -47,35 +20,45 @@ const isProduction = process.argv[2] === 'production';
 
 const workers = [];
 if (isProduction && cluster.isMaster) {
+  // If this is the master, set its id to 0 and spawn workers (only production)
   setWorkerId(0);
   setUpWorkers();
 } else {
+  // If this is a worker, or development environment
+
+  // Set worker id to its process id (only production)
   if (process.argv[2] === 'production') {
     setWorkerId(cluster.worker.process.pid);
   }
 
   // Run server setup
-  main(cluster.worker && cluster.worker.id > cpuCount);
+  const serverOptions = {
+    isLoggingEnabled: !isProduction || (cluster.worker && cluster.worker.id > cpuCount),
+    port: webserverPort,
+    databaseAddress,
+  };
+
+  createServerAsync(serverOptions);
 }
 
 function setUpWorkers() {
-  // Create same number of workers as CPU cores available
   print(`Starting ${cpuCount} workers...`);
 
+  // Create same number of workers as CPU cores available
   for (let i = 0; i < cpuCount; i++) {
     workers.push(cluster.fork());
 
     workers[i].on('message', handleWorkerMessage);
   }
 
-  // Log on worker start
+  // Log it when all workers are online
   cluster.on('online', () => {
     if (workers.every(worker => worker.state === 'online')) {
       print('All workers started, starting server...\n');
     }
   });
 
-  // Create new workers and log it when one exits
+  // Log it when a worker exits and create a new one in its place
   cluster.on('exit', (worker, code, signal) => {
     printError(`Worker ${worker.process.pid} exited with code ${code}, and signal ${signal}`);
 
@@ -105,79 +88,18 @@ function handleWorkerMessage(message) {
   }
 
   if (type === 'database' && data === 'connected') {
+    // Count workers connected to database and log it when all are connected
     dbConnectionCount++;
 
     if (dbConnectionCount === cpuCount) {
       print(`All workers connected to MongoDB server at mongodb://${databaseAddress}/`);
     }
   } else if (type === 'webserver' && data === 'online') {
+    // Count workers connected to the webserver and log it when all are connected
     webserverInstanceCount++;
 
     if (webserverInstanceCount === cpuCount) {
       print(`Webserver started at https://localhost:${webserverPort}/ - All workers are up.\n`);
     }
   }
-}
-
-
-/* ------------------------------------------ Webserver ----------------------------------------- */
-
-async function main(isForceLogging) {
-  const isLoggingEnabled = !isProduction || isForceLogging;
-
-  // Connect to MongoDB Database
-  if (isLoggingEnabled) {
-    print('Connecting to the database....\n');
-  }
-  if (!await database.connect(databaseAddress)) {
-    process.exit(1);
-  }
-
-  if (isLoggingEnabled) {
-    print(`Connected to MongoDB server at mongodb://${databaseAddress}/`);
-  } else {
-    process.send({ type: 'database', data: 'connected' });
-  }
-
-  // Create Express application
-  const app = express();
-  app.use(compression());
-
-  // Additional express middlewares
-  app.use(bodyParser.json());
-  app.use(cookieParser());
-  app.use(session({
-    secret: '98414c22d7e2cf27b3317ca7e19df38e9eb221bd',
-    resave: true,
-    saveUninitialized: false,
-  }));
-
-  // Add GraphQL express middleware
-  app.use(
-    '/api',
-    (req, _, next) => {
-      print(`GraphQL API request: ${req.body.operationName || '[GET GraphiQL]'}`);
-      next();
-    },
-    graphqlHTTP(req => ({
-      schema: graphQLSchema,
-      rootValue: { session: req.session },
-      graphiql: true,
-    })),
-  );
-
-  // Start HTTP 2 Secure Webserver
-  const options = {
-    key: fs.readFileSync(path.join(__dirname, './ssl/key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, './ssl/cert.crt')),
-    passphrase: 'iManT',
-  };
-
-  https.createServer(options, app).listen(webserverPort, () => {
-    if (isLoggingEnabled) {
-      print(`Webserver is listening at https://localhost:${webserverPort}/\n`);
-    } else {
-      process.send({ type: 'webserver', data: 'online' });
-    }
-  });
 }

@@ -4,6 +4,7 @@ const requestPromise = require('request-promise');
 
 const { Discussion } = require('../database');
 
+// Request options
 const request = requestPromise.defaults({
   proxy: 'http://localhost:3128/',
   headers: { 'User-Agent': 'Horizont-News' },
@@ -13,15 +14,18 @@ exports.addDiscussionByUrl = async (url, resolve, reject) => {
   let newDiscussion;
 
   try {
-    newDiscussion = await new Discussion({
+    // Create new discussion
+    newDiscussion = new Discussion({
       createdAt: new Date(),
       owner: 'testuser',
       url,
-    }).save();
+    });
 
-    const discussionData = await getDiscussionData(newDiscussion);
-    newDiscussion = Object.assign(newDiscussion, discussionData);
+    // Get page data at url
+    const pageData = await getPageData(newDiscussion);
+    newDiscussion = Object.assign(newDiscussion, pageData);
 
+    // Save discussion with page data
     await newDiscussion.save();
     resolve();
   } catch ({ message }) {
@@ -51,34 +55,33 @@ exports.postComment = async (text, discussionId, resolve, reject) => {
   }
 };
 
-async function getDiscussionData(discussion) {
+async function getPageData(discussion) {
   if (!discussion.url) {
-    throw TypeError('The argument "discussion" must have an "url" attribute.');
+    throw TypeError('The argument "discussion" must have a "url" attribute.');
   }
 
-  const discussionData = {};
-  discussionData.url = addhttp(discussion.url);
-
-  const response = await request(discussionData.url);
+  // Get html at url and build a DOM from it
+  const url = addHttp(discussion.url);
+  const response = await request(url);
   const { document } = domino.createWindow(response);
 
+  // Extend default metadata parse rules
   const extendedImageRules = metadataRuleSets.image;
   extendedImageRules.rules.push(['img[src]', element => element.src]);
 
-  const metadata = getMetadata(document, discussionData.url, {
+  // Get the metadata of the DOM using the extended rules
+  const metadata = getMetadata(document, url, {
     ...metadataRuleSets,
     image: extendedImageRules,
   });
+  metadata.url = url;
 
-  discussionData.description = metadata.description;
-  discussionData.image = metadata.image;
-  discussionData.title = metadata.title;
-
-  return discussionData;
+  return metadata;
 }
 
 // From https://stackoverflow.com/a/24657561/2058437
-function addhttp(url) {
+function addHttp(url) {
+  // Add "http://" to the url, if it isn't there
   if (!/^(?:f|ht)tps?:\/\//.test(url)) {
     return `http://${url}`;
   }

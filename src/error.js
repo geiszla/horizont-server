@@ -1,7 +1,8 @@
 const {
-  print, printWarning,
-} = require('./utilities');
+  print, printError, printWarning,
+} = require('./logging');
 
+// Log unhandled promise rejections
 const unhandledPromises = [];
 process.on('unhandledRejection', (reason, promise) => {
   /* eslint no-param-reassign: 0 */
@@ -16,6 +17,7 @@ process.on('unhandledRejection', (reason, promise) => {
   }
 });
 
+// Log promise rejections, which were reported as unhandled (above), but then were handled later
 process.on('rejectionHandled', (promise) => {
   const index = unhandledPromises.indexOf(promise);
   unhandledPromises.splice(index, 1);
@@ -28,4 +30,21 @@ process.on('exit', () => {
     const rejections = unhandledPromises.map(promise => promise.reason);
     printWarning('Unhandled rejections before exiting:', rejections);
   }
+});
+
+// Log handled promise rejections
+global.Promise = new Proxy(global.Promise, {
+  get(target, propKey, receiver) {
+    const targetValue = Reflect.get(target, propKey, receiver);
+
+    if (typeof targetValue === 'function' && propKey === 'reject') {
+      return (...args) => {
+        printError(`Handled promise rejection: ${args[0].message}`);
+
+        return targetValue.apply(this, args); // (A)
+      };
+    }
+
+    return targetValue;
+  },
 });

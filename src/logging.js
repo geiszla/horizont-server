@@ -1,11 +1,11 @@
 const localeOptions = { hour12: false };
 let workerId;
 
-const prefixes = {
+const prefixes = Object.freeze({
   log: 'Info',
   warn: 'Warning',
   error: 'Error',
-};
+});
 
 exports.setWorkerId = (id) => {
   workerId = id;
