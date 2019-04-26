@@ -1,6 +1,6 @@
 const {
-  print, printError, printWarning,
-} = require('./logging');
+  print, printError, printVerbose, printWarning,
+} = require('./log');
 
 // Log unhandled promise rejections
 const unhandledPromises = [];
@@ -35,17 +35,25 @@ process.on('exit', () => {
 
 // Log handled promise rejections
 global.Promise = new Proxy(global.Promise, {
-  get(target, propKey, receiver) {
-    const targetValue = Reflect.get(target, propKey, receiver);
+  get(target, propertyName, receiver) {
+    const targetValue = Reflect.get(target, propertyName, receiver);
 
-    if (typeof targetValue === 'function' && propKey === 'reject') {
+    if (typeof targetValue === 'function' && propertyName === 'reject') {
       return (...args) => {
-        printError(`Handled promise rejection: ${args[0].message}`);
+        printError('Handled promise rejection:', args[0].message);
 
         return targetValue.apply(this, args);
       };
     }
 
     return targetValue;
+  },
+});
+
+global.Error = new Proxy(global.Error, {
+  construct(Target, args) {
+    printVerbose('Caught error:', args[0]);
+
+    return new Target(...args);
   },
 });

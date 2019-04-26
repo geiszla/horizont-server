@@ -10,7 +10,7 @@ const session = require('express-session');
 
 const database = require('./database');
 const graphQLSchema = require('./api');
-const { print } = require('./logging');
+const { print } = require('./log');
 
 module.exports = async (options) => {
   const { isLoggingEnabled, port, databaseAddress } = options;
@@ -46,7 +46,7 @@ module.exports = async (options) => {
   app.use(
     '/api',
     (req, _, next) => {
-      print(`GraphQL API request: ${req.body.operationName || '[GET GraphiQL]'}`);
+      print('GraphQL API request:', req.body.operationName || '[GET GraphiQL]');
       next();
     },
     graphqlHTTP(req => ({

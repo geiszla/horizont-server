@@ -1,20 +1,13 @@
 const mongoose = require('mongoose');
 const shortid = require('shortid');
 
-const { printError } = require('./logging');
-
 mongoose.Promise = Promise;
 
 /* ----------------------------------- Database Communication ----------------------------------- */
 
 exports.connect = async (address) => {
-  try {
-    await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
-    return true;
-  } catch ({ message }) {
-    printError(`Error: ${message}`);
-    return false;
-  }
+  await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
+  return true;
 };
 
 

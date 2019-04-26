@@ -5,7 +5,9 @@ global.Promise = require('bluebird');
 // Set up error handling before local modules are loaded
 require('./src/error');
 
-const { print, printError, setWorkerId } = require('./src/logging');
+const {
+  print, printError, setVerbosity, setWorkerId,
+} = require('./src/log');
 const createServerAsync = require('./src/webserver');
 
 
@@ -18,6 +20,10 @@ const isProduction = process.argv[2] === 'production';
 
 /* ----------------------------------------- Clustering ----------------------------------------- */
 
+if (process.argv.includes('verbose')) {
+  setVerbosity(true);
+}
+
 const workers = [];
 if (isProduction && cluster.isMaster) {
   // If this is the master, set its id to 0 and spawn workers (only production)
@@ -27,7 +33,7 @@ if (isProduction && cluster.isMaster) {
   // If this is a worker, or development environment
 
   // Set worker id to its process id (only production)
-  if (process.argv[2] === 'production') {
+  if (process.argv.includes('production')) {
     setWorkerId(cluster.worker.process.pid);
   }
 
@@ -63,7 +69,7 @@ function setUpWorkers() {
     printError(`Worker ${worker.process.pid} exited with code ${code}, and signal ${signal}`);
 
     workers.push(cluster.fork());
-    print(`Creating new worker: ${workers[workers.length - 1].process.pid}`);
+    print('Creating new worker:', workers[workers.length - 1].process.pid);
 
     workers[workers.length - 1].on('message', handleWorkerMessage);
   });

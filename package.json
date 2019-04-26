@@ -11,6 +11,7 @@
     "stop": "pm2 stop main.js",
     "prodtest": "node main production",
     "dev": "nodemon main.js",
+    "dev:verbose": "nodemon main.js verbose",
     "pm": "pm2"
   },
   "license": "MIT",
