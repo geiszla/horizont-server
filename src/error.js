@@ -50,6 +50,7 @@ global.Promise = new Proxy(global.Promise, {
   },
 });
 
+// Log caught errors (only in verbose mode)
 global.Error = new Proxy(global.Error, {
   construct(Target, args) {
     printVerbose('Caught error:', args[0]);

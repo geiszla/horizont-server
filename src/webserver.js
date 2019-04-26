@@ -1,16 +1,18 @@
 const bodyParser = require('body-parser');
+const chalk = require('chalk');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const express = require('express');
 const fs = require('fs');
 const graphqlHTTP = require('express-graphql');
 const https = require('https');
+const morgan = require('morgan');
 const path = require('path');
 const session = require('express-session');
 
 const database = require('./database');
 const graphQLSchema = require('./api');
-const { print } = require('./log');
+const { morganGenerator, print } = require('./log');
 
 module.exports = async (options) => {
   const { isLoggingEnabled, port, databaseAddress } = options;
@@ -31,6 +33,7 @@ module.exports = async (options) => {
 
   // Create Express application
   const app = express();
+  app.use(morgan(morganGenerator));
   app.use(compression());
 
   // Additional express middlewares
@@ -46,7 +49,7 @@ module.exports = async (options) => {
   app.use(
     '/api',
     (req, _, next) => {
-      print('GraphQL API request:', req.body.operationName || '[GET GraphiQL]');
+      print('GraphQL API request:', chalk.yellow(req.body.operationName || '[GET GraphiQL]'));
       next();
     },
     graphqlHTTP(req => ({
