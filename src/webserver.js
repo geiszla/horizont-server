@@ -7,7 +7,6 @@ const graphqlHTTP = require('express-graphql');
 const https = require('https');
 const path = require('path');
 const session = require('express-session');
-global.Promise = require('bluebird');
 
 const database = require('./database');
 const graphQLSchema = require('./api');
