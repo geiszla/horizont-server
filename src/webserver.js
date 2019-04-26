@@ -12,7 +12,7 @@ const session = require('express-session');
 
 const database = require('./database');
 const graphQLSchema = require('./api');
-const { morganGenerator, print } = require('./log');
+const { morganGenerator, print, printError } = require('./log');
 
 module.exports = async (options) => {
   const { isLoggingEnabled, port, databaseAddress } = options;
@@ -48,14 +48,17 @@ module.exports = async (options) => {
   // Add GraphQL express middleware
   app.use(
     '/api',
-    (req, _, next) => {
-      print('GraphQL API request:', chalk.yellow(req.body.operationName || '[GET GraphiQL]'));
+    (request, _, next) => {
+      print('GraphQL API request:', chalk.yellow(request.body.operationName || '[GET GraphiQL]'));
       next();
     },
-    graphqlHTTP(req => ({
+    graphqlHTTP(request => ({
       schema: graphQLSchema,
-      rootValue: { session: req.session },
-      graphiql: true,
+      rootValue: { session: request.session },
+      graphiql: process.argv.includes('production'),
+      customFormatErrorFn: (error) => {
+        printError(`GraphQL error: ${error.message}`);
+      },
     })),
   );
 

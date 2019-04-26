@@ -15,7 +15,7 @@ const prefixes = Object.freeze({
 
 const statusColors = {
   2: 'green',
-  3: 'orange',
+  3: 'cyan',
 };
 
 let workerId;

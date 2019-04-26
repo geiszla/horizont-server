@@ -1,5 +1,5 @@
 const {
-  print, printError, printVerbose, printWarning,
+  print, printVerbose, printWarning,
 } = require('./log');
 
 // Log unhandled promise rejections
@@ -40,7 +40,7 @@ global.Promise = new Proxy(global.Promise, {
 
     if (typeof targetValue === 'function' && propertyName === 'reject') {
       return (...args) => {
-        printError('Handled promise rejection:', args[0].message);
+        printWarning('Handled promise rejection:', args[0].message);
 
         return targetValue.apply(this, args);
       };
