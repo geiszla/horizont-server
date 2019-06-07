@@ -64,11 +64,16 @@ exports.morganGenerator = (tokens, ...rest) => {
 
   // Response size
   const responseSize = res(...rest, 'content-length');
-  const sizeText = chalk.keyword(responseTime < 1024 ? 'green' : 'orange')(`${responseSize} bytes`);
-  const responseText = `response: { time: ${timeText}, size: ${sizeText} }`;
+
+  let sizeText;
+  if (responseSize) {
+    sizeText = chalk.keyword(responseSize < 1024 ? 'green' : 'orange')(`${responseSize} bytes`);
+  } else {
+    sizeText = 'unknown';
+  }
 
   // Append more request metadata to the message
-  let metadata = responseText;
+  let metadata = `response: { time: ${timeText}, size: ${sizeText} }`;
 
   if (process.argv.includes('production') || isVerbose) {
     // Add more information if it's in production mode or verbosity is set
@@ -114,7 +119,5 @@ function generatePrefix(methodName) {
   const timeStamp = chalk.cyan.bold(new Date().toLocaleString('en-US', localeOptions));
   const workerPrefix = workerId ? ` [${workerId}]` : '';
 
-  const prefix = `${timeStamp}${workerPrefix} ${prefixes[methodName]} `;
-
-  return prefix;
+  return `${timeStamp}${workerPrefix} ${prefixes[methodName]} `;
 }

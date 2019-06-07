@@ -55,9 +55,10 @@ module.exports = async (options) => {
     graphqlHTTP(request => ({
       schema: graphQLSchema,
       rootValue: { session: request.session },
-      graphiql: process.argv.includes('production'),
+      graphiql: !process.argv.includes('production'),
       customFormatErrorFn: (error) => {
         printError(`GraphQL error: ${error.message}`);
+        return false;
       },
     })),
   );
