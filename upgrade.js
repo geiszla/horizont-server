@@ -4,15 +4,15 @@ const Promise = require('bluebird');
 const fs = Promise.promisifyAll(require('fs'));
 
 const ignoredDependencies = ['babel-core', 'mobx', 'graphql'];
-main();
+upgradeAsync();
 
-async function main() {
-  const oldDependencies = await getDependencies();
+async function upgradeAsync() {
+  const oldDependencies = await getDependenciesAsync();
   const upgradedDependencies = await upgrade(oldDependencies);
   await compareDependencies(upgradedDependencies);
 }
 
-async function getDependencies() {
+async function getDependenciesAsync() {
   const packageData = await fs.readFileAsync('./package.json');
   const packageJSON = JSON.parse(packageData);
 
@@ -39,7 +39,7 @@ function upgrade(dependencies) {
 }
 
 async function compareDependencies(oldDependencies) {
-  const newDependencies = await getDependencies();
+  const newDependencies = await getDependenciesAsync();
   console.log();
   console.log('Upgraded dependencies:');
 

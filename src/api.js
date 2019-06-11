@@ -8,8 +8,8 @@ const {
 
 const { composeWithMongoose } = require('graphql-compose-mongoose');
 
+const { addDiscussionByUrlAsync, postCommentAsync } = require('./app/discussions');
 const { Discussion } = require('./database');
-const { addDiscussionByUrl, postComment } = require('./app/discussions');
 
 
 /* ------------------------------------------- Types -------------------------------------------- */
@@ -41,7 +41,7 @@ const mutationType = new GraphQLObjectType({
         url: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { url }) => new Promise((resolve, reject) => {
-        addDiscussionByUrl(url, resolve, reject);
+        addDiscussionByUrlAsync(url, resolve, reject);
       }),
     },
     postComment: {
@@ -51,7 +51,7 @@ const mutationType = new GraphQLObjectType({
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { text, discussionId }) => new Promise((resolve, reject) => {
-        postComment(text, discussionId, resolve, reject);
+        postCommentAsync(text, discussionId, resolve, reject);
       }),
     },
   },

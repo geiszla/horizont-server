@@ -10,11 +10,12 @@ const morgan = require('morgan');
 const path = require('path');
 const session = require('express-session');
 
-const database = require('./database');
-const graphQLSchema = require('./api');
 const {
   graphQueryLogger, morganGenerator, print, printError, graphResponseLogger,
 } = require('./log');
+
+const database = require('./database');
+const graphQLSchema = require('./api');
 
 module.exports = async (options) => {
   const { isLoggingEnabled, port, databaseAddress } = options;
@@ -24,7 +25,7 @@ module.exports = async (options) => {
     print('Connecting to the database....\n');
   }
 
-  if (!await database.connect(databaseAddress)) {
+  if (!await database.connectAsync(databaseAddress)) {
     process.exit(1);
   }
 

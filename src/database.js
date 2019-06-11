@@ -3,9 +3,10 @@ const shortid = require('shortid');
 
 mongoose.Promise = Promise;
 
+
 /* ----------------------------------- Database Communication ----------------------------------- */
 
-exports.connect = async (address) => {
+exports.connectAsync = async (address) => {
   await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
   return true;
 };

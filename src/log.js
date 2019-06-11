@@ -48,6 +48,7 @@ exports.morganGenerator = requestLogGenerator;
 exports.graphQueryLogger = graphQueryLogger;
 exports.graphResponseLogger = graphResponseLogger;
 
+
 /* ------------------------------------- Locals and helpers ------------------------------------- */
 
 function requestLogGenerator(tokens, ...rest) {
@@ -128,14 +129,14 @@ function graphResponseLogger(target, thisArg, argumentsList) {
   const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]));
 
   if (graphQLResponse.length > 300) {
-    if (!isVerbose) {
-      exports.print('GraphQL response too long. Run in verbose mode to log everything.');
-    } else {
+    if (isVerbose) {
       const logString = highlightJSON(JSON.stringify(JSON.parse(graphQLResponse), null, 2));
-      exports.printVerbose(`GrphQL response: ${logString}`);
+      exports.printVerbose(`GraphQL response: ${logString}`);
+    } else {
+      exports.print('GraphQL response too long. Run in verbose mode to log everything.');
     }
   } else {
-    exports.print(`GraphQL response: ${highlightJSON(highlightJSON(graphQLResponse))}`);
+    exports.print(`GraphQL response: ${highlightJSON(graphQLResponse)}`);
   }
 
   Reflect.apply(target, thisArg, argumentsList);

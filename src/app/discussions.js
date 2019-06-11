@@ -10,40 +10,42 @@ const request = requestPromise.defaults({
   headers: { 'User-Agent': 'Horizont-News' },
 });
 
-exports.addDiscussionByUrl = async (urlString, resolve, reject) => {
+exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
   let url = addHttp(urlString);
+
   try {
     url = new URL(urlString);
   } catch (exception) {
-    reject('The given URL is not valid.');
+    reject(new TypeError('The given URL is not valid.'));
     return;
   }
 
   const existingDiscussion = await Discussion.findOne({ url }).exec();
-  const pageData = existingDiscussion || await getPageData(url);
+  const pageData = existingDiscussion || await getPageDataAsync(url);
 
   resolve(pageData);
 
-  try {
-    // Create new discussion
-    let newDiscussion = new Discussion({
-      createdAt: new Date(),
-      owner: 'testuser',
-      url: url.trim('/'),
-    });
+  // Create new discussion
+  let newDiscussion = new Discussion({
+    createdAt: new Date(),
+    owner: 'testuser',
+    url: url.href.trim('/'),
+  });
 
-    // Get page data at url
-    newDiscussion = Object.assign(pageData, newDiscussion);
+  // Add page data to discussion
+  newDiscussion = Object.assign(newDiscussion, {
+    description: existingDiscussion.description,
+    image: existingDiscussion.image,
+    location: existingDiscussion.location,
+    title: existingDiscussion.title,
+  });
 
-    // Save discussion with page data
-    await newDiscussion.save();
-    resolve();
-  } catch ({ message }) {
-    reject('An error occurred while creating discussion.');
-  }
+  await newDiscussion.save();
+
+  resolve();
 };
 
-exports.postComment = async (text, discussionId, resolve, reject) => {
+exports.postCommentAsync = async (text, discussionId, resolve, reject) => {
   const discussion = await Discussion.findOne({ shortId: discussionId }).exec();
 
   if (!discussion) {
@@ -53,11 +55,7 @@ exports.postComment = async (text, discussionId, resolve, reject) => {
 
   try {
     // Add comment to discussion
-    discussion.comments.push({
-      text,
-      user: 'testuser',
-      postedAt: new Date(),
-    });
+    discussion.comments.push({ text, user: 'testuser', postedAt: new Date() });
     // Save discussion
     discussion.save();
 
@@ -67,9 +65,9 @@ exports.postComment = async (text, discussionId, resolve, reject) => {
   }
 };
 
-async function getPageData(url) {
+async function getPageDataAsync(url) {
   // Get html at url and build a DOM from it
-  const response = await request(url);
+  const response = await request(url.href);
   const { document } = domino.createWindow(response);
 
   // Extend default metadata parse rules
