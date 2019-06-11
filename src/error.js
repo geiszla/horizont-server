@@ -10,7 +10,7 @@ process.on('unhandledRejection', (reason, promise) => {
   unhandledPromises.push(promise);
 
   /* eslint no-underscore-dangle: 0 */
-  printWarning(`Possibly unhandled promise rejection (${promise._bitField}):`, reason);
+  printWarning(`Possibly unhandled promise rejection (${promise._bitField}):`, reason.stack);
 
   if (!reason) {
     console.trace('Unknown error');
