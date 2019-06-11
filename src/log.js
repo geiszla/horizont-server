@@ -1,5 +1,8 @@
-const chalk = require('chalk');
+let chalk = require('chalk');
+const { highlight } = require('cli-highlight');
 
+// Limit colors, so we can use keyword the same as default colors
+chalk = new chalk.constructor({ level: 1 });
 
 /* ------------------------------------------ Globals ------------------------------------------- */
 
@@ -56,7 +59,7 @@ function requestLogGenerator(tokens, ...rest) {
 
   // Status
   const statusCode = status(...rest);
-  const statusText = ` [${chalk.keyword([statusColors[statusCode[0]] || 'red'])(statusCode)}]`;
+  const statusText = ` [${chalk[[statusColors[statusCode[0]] || 'red']](statusCode)}]`;
 
   const message = [
     generatePrefix('request') + statusText,
@@ -122,39 +125,29 @@ function graphQueryLogger(context) {
 }
 
 function graphResponseLogger(target, thisArg, argumentsList) {
-  const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]), null, 0);
+  const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]));
 
-  if (graphQLResponse.length > 100) {
+  if (graphQLResponse.length > 300) {
     if (!isVerbose) {
       exports.print('GraphQL response too long. Run in verbose mode to log everything.');
     } else {
-      exports.printVerbose(`GrphQL response: ${graphQLResponse}`);
+      const logString = highlightJSON(JSON.stringify(JSON.parse(graphQLResponse), null, 2));
+      exports.printVerbose(`GrphQL response: ${logString}`);
     }
   } else {
-    exports.print(`GrphQL response: ${graphQLResponse}`);
+    exports.print(`GraphQL response: ${highlightJSON(highlightJSON(graphQLResponse))}`);
   }
 
   Reflect.apply(target, thisArg, argumentsList);
 }
 
-const uriRegex = /[^\s]*:\/\/[^\s)]*/g;
 function outputToConsole(methodName, ...args) {
+  let processedArguments = args;
+
   // Highligh specific parts of the logged message
-  const processedArguments = args.map((argument) => {
-    let newArgument = argument;
-
-    if (typeof argument === 'string') {
-      // Highlight urls in message text
-      let match = uriRegex.exec(argument);
-
-      while (match) {
-        newArgument = argument.replace(match, chalk.blue(match));
-        match = uriRegex.exec();
-      }
-    }
-
-    return newArgument;
-  });
+  if (methodName === 'error') {
+    processedArguments = args.map(argument => chalk.red(argument));
+  }
 
   console[methodName](generatePrefix(methodName), ...processedArguments);
 }
@@ -165,4 +158,8 @@ function generatePrefix(methodName) {
   const workerPrefix = workerId ? ` [${workerId}]` : '';
 
   return `${timeStamp}${workerPrefix} ${prefixes[methodName]} `;
+}
+
+function highlightJSON(text) {
+  return highlight(text, { language: 'json', ignoreIllegals: true });
 }

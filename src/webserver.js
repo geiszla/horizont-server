@@ -1,4 +1,5 @@
 const bodyParser = require('body-parser');
+const chalk = require('chalk');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const express = require('express');
@@ -28,7 +29,8 @@ module.exports = async (options) => {
   }
 
   if (isLoggingEnabled) {
-    print(`Connected to MongoDB server at mongodb://${databaseAddress}/`);
+    const url = chalk.blue(`mongodb://${databaseAddress}/`);
+    print(`Connected to MongoDB server at ${url}`);
   } else {
     process.send({ type: 'database', data: 'connected' });
   }
@@ -79,7 +81,8 @@ module.exports = async (options) => {
 
   https.createServer(secureOptions, app).listen(port, () => {
     if (isLoggingEnabled) {
-      print(`Webserver is listening at https://localhost:${port}/\n`);
+      const url = chalk.blue(`https://localhost:${port}/\n`);
+      print(`Webserver is listening at ${url}`);
     } else {
       process.send({ type: 'webserver', data: 'online' });
     }

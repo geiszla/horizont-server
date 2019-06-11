@@ -10,20 +10,30 @@ const request = requestPromise.defaults({
   headers: { 'User-Agent': 'Horizont-News' },
 });
 
-exports.addDiscussionByUrl = async (url, resolve, reject) => {
-  let newDiscussion;
+exports.addDiscussionByUrl = async (urlString, resolve, reject) => {
+  let url = addHttp(urlString);
+  try {
+    url = new URL(urlString);
+  } catch (exception) {
+    reject('The given URL is not valid.');
+    return;
+  }
+
+  const existingDiscussion = await Discussion.findOne({ url }).exec();
+  const pageData = existingDiscussion || await getPageData(url);
+
+  resolve(pageData);
 
   try {
     // Create new discussion
-    newDiscussion = new Discussion({
+    let newDiscussion = new Discussion({
       createdAt: new Date(),
       owner: 'testuser',
-      url,
+      url: url.trim('/'),
     });
 
     // Get page data at url
-    const pageData = await getPageData(newDiscussion);
-    newDiscussion = Object.assign(newDiscussion, pageData);
+    newDiscussion = Object.assign(pageData, newDiscussion);
 
     // Save discussion with page data
     await newDiscussion.save();
@@ -57,13 +67,8 @@ exports.postComment = async (text, discussionId, resolve, reject) => {
   }
 };
 
-async function getPageData(discussion) {
-  if (!discussion.url) {
-    throw TypeError('The argument "discussion" must have a "url" attribute.');
-  }
-
+async function getPageData(url) {
   // Get html at url and build a DOM from it
-  const url = addHttp(discussion.url);
   const response = await request(url);
   const { document } = domino.createWindow(response);
 

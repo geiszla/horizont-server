@@ -6,7 +6,15 @@ const {
   GraphQLString,
 } = require('graphql');
 
+const { composeWithMongoose } = require('graphql-compose-mongoose');
+
+const { Discussion } = require('./database');
 const { addDiscussionByUrl, postComment } = require('./app/discussions');
+
+
+/* ------------------------------------------- Types -------------------------------------------- */
+
+const discussionType = composeWithMongoose(Discussion).getType();
 
 
 /* ------------------------------------------ Queries ------------------------------------------- */
@@ -28,7 +36,7 @@ const mutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: {
     addDiscussionByUrl: {
-      type: GraphQLBoolean,
+      type: discussionType,
       args: {
         url: { type: new GraphQLNonNull(GraphQLString) },
       },
