@@ -40,7 +40,7 @@ global.Promise = new Proxy(global.Promise, {
 
     if (typeof targetValue === 'function' && propertyName === 'reject') {
       return (...args) => {
-        printWarning('Handled promise rejection:', args[0].message);
+        printVerbose('Handled promise rejection:', args[0].message);
 
         return targetValue.apply(this, args);
       };

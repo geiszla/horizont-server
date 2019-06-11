@@ -1,5 +1,4 @@
 const bodyParser = require('body-parser');
-const chalk = require('chalk');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const express = require('express');
@@ -12,7 +11,9 @@ const session = require('express-session');
 
 const database = require('./database');
 const graphQLSchema = require('./api');
-const { morganGenerator, print, printError } = require('./log');
+const {
+  graphQueryLogger, morganGenerator, print, printError,
+} = require('./log');
 
 module.exports = async (options) => {
   const { isLoggingEnabled, port, databaseAddress } = options;
@@ -21,6 +22,7 @@ module.exports = async (options) => {
   if (isLoggingEnabled) {
     print('Connecting to the database....\n');
   }
+
   if (!await database.connect(databaseAddress)) {
     process.exit(1);
   }
@@ -48,14 +50,11 @@ module.exports = async (options) => {
   // Add GraphQL express middleware
   app.use(
     '/api',
-    (request, _, next) => {
-      print('GraphQL API request:', chalk.yellow(request.body.operationName || '[GET GraphiQL]'));
-      next();
-    },
     graphqlHTTP(request => ({
       schema: graphQLSchema,
       rootValue: { session: request.session },
       graphiql: !process.argv.includes('production'),
+      validationRules: graphQueryLogger,
       customFormatErrorFn: (error) => {
         printError(`GraphQL error: ${error.message}`);
         return false;

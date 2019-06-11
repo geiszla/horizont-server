@@ -41,7 +41,13 @@ exports.print = (...args) => outputToConsole('log', ...args);
 exports.printWarning = (...args) => outputToConsole('warn', ...args);
 exports.printError = (...args) => outputToConsole('error', ...args);
 
-exports.morganGenerator = (tokens, ...rest) => {
+exports.morganGenerator = requestLogGenerator;
+exports.graphQueryLogger = queryStringBuilder;
+
+
+/* ------------------------------------- Locals and helpers ------------------------------------- */
+
+function requestLogGenerator(tokens, ...rest) {
   const {
     method, url, status, res,
   } = tokens;
@@ -87,12 +93,35 @@ exports.morganGenerator = (tokens, ...rest) => {
   }
 
   return `${message} | ${metadata}`;
-};
+}
 
+function queryStringBuilder(context) {
+  /* eslint no-underscore-dangle: 0 */
+  const queries = context._ast.definitions;
 
-/* ------------------------------------- Locals and helpers ------------------------------------- */
+  queries.forEach((query) => {
+    const selectionText = query.selectionSet.selections.map((selection) => {
+      const argumentText = selection.arguments.map((argument) => {
+        const argumentValue = JSON.stringify(argument.value.value, null, 2);
 
-const uriRegex = /[^\s]*:\/\/[^\s]*/g;
+        return `${argument.name.value}: ${argumentValue}`;
+      }).join(', ');
+
+      return `${selection.name.value}(${argumentText})`;
+    }).join(', ');
+
+    if (query.operation) {
+      const operation = chalk.blue(query.operation);
+      const operationData = `${chalk.yellow(query.name.value)} { ${selectionText} }`;
+
+      exports.print(`GraphQL API request: ${operation} ${operationData}`);
+    }
+  });
+
+  return true;
+}
+
+const uriRegex = /[^\s]*:\/\/[^\s)]*/g;
 function outputToConsole(methodName, ...args) {
   // Highligh specific parts of the logged message
   const processedArguments = args.map((argument) => {
