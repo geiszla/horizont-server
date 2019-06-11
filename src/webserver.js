@@ -12,7 +12,7 @@ const session = require('express-session');
 const database = require('./database');
 const graphQLSchema = require('./api');
 const {
-  graphQueryLogger, morganGenerator, print, printError,
+  graphQueryLogger, morganGenerator, print, printError, graphResponseLogger,
 } = require('./log');
 
 module.exports = async (options) => {
@@ -46,6 +46,14 @@ module.exports = async (options) => {
     resave: true,
     saveUninitialized: false,
   }));
+
+  app.use((_, res, next) => {
+    res.send = new Proxy(res.send, {
+      apply: graphResponseLogger,
+    });
+
+    next();
+  });
 
   // Add GraphQL express middleware
   app.use(

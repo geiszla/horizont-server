@@ -42,8 +42,8 @@ exports.printWarning = (...args) => outputToConsole('warn', ...args);
 exports.printError = (...args) => outputToConsole('error', ...args);
 
 exports.morganGenerator = requestLogGenerator;
-exports.graphQueryLogger = queryStringBuilder;
-
+exports.graphQueryLogger = graphQueryLogger;
+exports.graphResponseLogger = graphResponseLogger;
 
 /* ------------------------------------- Locals and helpers ------------------------------------- */
 
@@ -95,7 +95,7 @@ function requestLogGenerator(tokens, ...rest) {
   return `${message} | ${metadata}`;
 }
 
-function queryStringBuilder(context) {
+function graphQueryLogger(context) {
   /* eslint no-underscore-dangle: 0 */
   const queries = context._ast.definitions;
 
@@ -119,6 +119,22 @@ function queryStringBuilder(context) {
   });
 
   return true;
+}
+
+function graphResponseLogger(target, thisArg, argumentsList) {
+  const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]), null, 0);
+
+  if (graphQLResponse.length > 100) {
+    if (!isVerbose) {
+      exports.print('GraphQL response too long. Run in verbose mode to log everything.');
+    } else {
+      exports.printVerbose(`GrphQL response: ${graphQLResponse}`);
+    }
+  } else {
+    exports.print(`GrphQL response: ${graphQLResponse}`);
+  }
+
+  Reflect.apply(target, thisArg, argumentsList);
 }
 
 const uriRegex = /[^\s]*:\/\/[^\s)]*/g;
