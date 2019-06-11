@@ -3,6 +3,7 @@ const { getMetadata, metadataRuleSets } = require('page-metadata-parser');
 const requestPromise = require('request-promise');
 
 const { Discussion } = require('../database');
+const { printVerbose } = require('../log');
 
 // Request options
 const request = requestPromise.defaults({
@@ -16,12 +17,16 @@ exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
   try {
     url = new URL(urlString);
   } catch (exception) {
-    reject(new TypeError('The given URL is not valid.'));
+    reject(new Error('The given URL is not valid.'));
     return;
   }
 
   const existingDiscussion = await Discussion.findOne({ url }).exec();
   const pageData = existingDiscussion || await getPageDataAsync(url);
+
+  if (pageData === existingDiscussion) {
+    printVerbose('[Discussion] Using page data from existing discussion.');
+  }
 
   resolve(pageData);
 
@@ -34,22 +39,20 @@ exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
 
   // Add page data to discussion
   newDiscussion = Object.assign(newDiscussion, {
-    description: existingDiscussion.description,
-    image: existingDiscussion.image,
-    location: existingDiscussion.location,
-    title: existingDiscussion.title,
+    description: pageData.description,
+    image: pageData.image,
+    location: pageData.location,
+    title: pageData.title,
   });
 
   await newDiscussion.save();
-
-  resolve();
 };
 
 exports.postCommentAsync = async (text, discussionId, resolve, reject) => {
   const discussion = await Discussion.findOne({ shortId: discussionId }).exec();
 
   if (!discussion) {
-    reject('Post does not exist.');
+    reject(new Error('Post does not exist.'));
     return;
   }
 
@@ -59,9 +62,9 @@ exports.postCommentAsync = async (text, discussionId, resolve, reject) => {
     // Save discussion
     discussion.save();
 
-    resolve();
+    resolve(true);
   } catch ({ message }) {
-    reject('An error occurred while posting comment.');
+    reject(new Error('An error occurred while posting comment.'));
   }
 };
 

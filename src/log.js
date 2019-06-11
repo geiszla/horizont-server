@@ -1,8 +1,5 @@
-let chalk = require('chalk');
+const chalk = require('chalk');
 const { highlight } = require('cli-highlight');
-
-// Limit colors, so we can use keyword the same as default colors
-chalk = new chalk.constructor({ level: 1 });
 
 /* ------------------------------------------ Globals ------------------------------------------- */
 
@@ -116,7 +113,8 @@ function graphQueryLogger(context) {
 
     if (query.operation) {
       const operation = chalk.blue(query.operation);
-      const operationData = `${chalk.yellow(query.name.value)} { ${selectionText} }`;
+      const queryBody = highlightJSON(`{ ${selectionText} }`);
+      const operationData = `${chalk.yellow(query.name.value)} ${queryBody}`;
 
       exports.print(`GraphQL API request: ${operation} ${operationData}`);
     }
@@ -128,7 +126,7 @@ function graphQueryLogger(context) {
 function graphResponseLogger(target, thisArg, argumentsList) {
   const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]));
 
-  if (graphQLResponse.length > 300) {
+  if (graphQLResponse.length > 150 && graphQLResponse.length < 1024) {
     if (isVerbose) {
       const logString = highlightJSON(JSON.stringify(JSON.parse(graphQLResponse), null, 2));
       exports.printVerbose(`GraphQL response: ${logString}`);
