@@ -6,12 +6,12 @@ const {
 /* ------------------------------------- Promise Rejections ------------------------------------- */
 
 // Log unhandled promise rejections
-/** @type {bluebird[]} */
+/** @type {Bluebird[]} */
 const unhandledPromises = [];
 process.on('unhandledRejection',
   /**
    * @param {Error | any} reason
-   * @param {bluebird} promise
+   * @param {Bluebird} promise
    * */
   (reason, promise) => {
     /* eslint no-param-reassign: 0 */
@@ -28,7 +28,7 @@ process.on('unhandledRejection',
   });
 
 // Log promise rejections, which were reported as unhandled (above), but then were handled later
-process.on('rejectionHandled', /** @param {bluebird} promise */ (promise) => {
+process.on('rejectionHandled', /** @param {Bluebird} promise */ (promise) => {
   const index = unhandledPromises.indexOf(promise);
   unhandledPromises.splice(index, 1);
 
@@ -64,10 +64,10 @@ global.Promise = new Proxy(global.Promise, {
 
 /* ------------------------------------------- Errors ------------------------------------------- */
 
-// Log caught errors (only in verbose mode)
+// Log all errors (only in verbose mode)
 global.Error = new Proxy(global.Error, {
   construct(Target, args) {
-    printVerbose('Caught error:', args[0]);
+    printVerbose('Caught Error:', args[0]);
 
     return new Target(...args);
   },

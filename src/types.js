@@ -1,5 +1,5 @@
 /**
- * @typedef {import('bluebird')} bluebird
+ * @typedef {import('bluebird')} Bluebird
  */
 
 /**

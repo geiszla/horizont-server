@@ -12,6 +12,38 @@ const request = requestPromise.defaults({
 });
 
 
+/**
+ * @param {string} shortId
+ * @param {boolean} isAgree
+ * @param {ResolveType<boolean>} resolve
+ * @param {RejectType} reject
+ */
+exports.agreeOrDisagreeAsync = async (isAgree, shortId, resolve, reject) => {
+  try {
+    /** @type {object} */
+    const discussion = await Discussion.findOne()
+      .or([{ shortId }, { 'comments.shortId': shortId }])
+      .exec();
+
+    if (!discussion) {
+      reject(new Error('No discussion or comment exists with this ID.'));
+      return;
+    }
+
+    if (discussion.shortId === shortId) {
+      discussion.usersAgreed.push('testuser');
+    } else {
+      const thisComment = discussion.comments.filter(comment => comment.shortId === shortId)[0];
+      thisComment[isAgree ? 'userAgreedCount' : 'userDisgreedCount']++;
+    }
+
+    discussion.save();
+    resolve(true);
+  } catch (error) {
+    reject(new Error('Couldn\'t delete discussion.'));
+  }
+};
+
 /* -------------------------------- Discussion Request Handlers --------------------------------- */
 
 /**
@@ -94,6 +126,12 @@ exports.editDiscussionAsync = async (newTitle, newDescription, shortId, resolve,
   try {
     /** @type {object} */
     const discussion = await Discussion.findOne({ shortId }).exec();
+
+    if (!discussion) {
+      reject(new Error('No discussion exists with this ID.'));
+      return;
+    }
+
     discussion.title = newTitle || discussion.title;
     discussion.description = newDescription || discussion.description;
 
@@ -119,7 +157,7 @@ exports.postCommentAsync = async (text, shortId, resolve, reject) => {
     const discussion = await Discussion.findOne({ shortId }).exec();
 
     if (!discussion) {
-      reject(new Error('Post does not exist.'));
+      reject(new Error('No discussion exists with this ID.'));
       return;
     }
 
@@ -144,6 +182,11 @@ exports.deleteCommentAsync = async (shortId, resolve, reject) => {
     /** @type {object} */
     const discussion = await Discussion.find({ 'comments.shortId': shortId }).exec();
 
+    if (!discussion) {
+      reject(new Error('No comment exists with this ID.'));
+      return;
+    }
+
     const commentIndex = discussion.comments.findIndex(comment => comment.shortId === shortId)[0];
     discussion.comments.splice(commentIndex, 1);
 
@@ -163,7 +206,13 @@ exports.deleteCommentAsync = async (shortId, resolve, reject) => {
 exports.editCommentAsync = async (newText, shortId, resolve, reject) => {
   try {
     /** @type {object} */
-    const discussion = await Discussion.find({ 'comments.shortId': shortId }).exec();
+    const discussion = await Discussion.findOne({ 'comments.shortId': shortId }).exec();
+
+    if (!discussion) {
+      reject(new Error('No comment exists with this ID.'));
+      return;
+    }
+
     const editableComment = discussion.comments.filter(comment => comment.shortId === shortId)[0];
 
     editableComment.text = newText;

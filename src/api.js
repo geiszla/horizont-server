@@ -9,6 +9,7 @@ const {
 const { composeWithMongoose } = require('graphql-compose-mongoose');
 
 const {
+  agreeOrDisagreeAsync,
   createDiscussionByUrlAsync,
   deleteCommentAsync,
   deleteDiscussionAsync,
@@ -99,6 +100,16 @@ const mutationType = new GraphQLObjectType({
       },
       resolve: (_, { newText, shortId }) => new Promise((resolve, reject) => {
         editCommentAsync(newText, shortId, resolve, reject);
+      }),
+    },
+    agreeOrDisagree: {
+      type: GraphQLBoolean,
+      args: {
+        isAgree: { type: new GraphQLNonNull(GraphQLBoolean) },
+        shortId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { isAgree, shortId }) => new Promise((resolve, reject) => {
+        agreeOrDisagreeAsync(isAgree, shortId, resolve, reject);
       }),
     },
   },
