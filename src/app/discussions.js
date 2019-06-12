@@ -2,7 +2,7 @@ const domino = require('domino');
 const { getMetadata, metadataRuleSets } = require('page-metadata-parser');
 const requestPromise = require('request-promise');
 
-const { Discussion } = require('../database');
+const { Discussion, NewsSource } = require('../database');
 const { printVerbose } = require('../log');
 
 // Request options
@@ -11,18 +11,22 @@ const request = requestPromise.defaults({
   headers: { 'User-Agent': 'Horizont-News' },
 });
 
-exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
-  let url = addHttp(urlString);
+/**
+ * @type {ApiRequestHandler<any>}
+ */
+exports.addDiscussionByUrlAsync = async (resolve, reject, [urlString]) => {
+  const processedUrlString = addHttp(urlString).replace(/[/\s]+$/, '');
 
+  let url;
   try {
-    url = new URL(urlString);
+    url = new URL(processedUrlString);
   } catch (exception) {
     reject(new Error('The given URL is not valid.'));
     return;
   }
 
   const existingDiscussion = await Discussion.findOne({ url }).exec();
-  const pageData = existingDiscussion || await getPageDataAsync(url);
+  const pageData = existingDiscussion || await getPageDataAsync(url.href);
 
   if (pageData === existingDiscussion) {
     printVerbose('[Discussion] Using page data from existing discussion.');
@@ -34,7 +38,7 @@ exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
   let newDiscussion = new Discussion({
     createdAt: new Date(),
     owner: 'testuser',
-    url: url.href.trim('/'),
+    url: url.href,
   });
 
   // Add page data to discussion
@@ -45,10 +49,22 @@ exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
     title: pageData.title,
   });
 
-  await newDiscussion.save();
+  const sourceUrl = addHttp(url.hostname);
+  const existingSource = await NewsSource.findOne({ url: sourceUrl }).exec();
+  const newsSource = existingSource || new NewsSource({
+    url: sourceUrl,
+    name: (await getPageDataAsync(sourceUrl)).title,
+    articles: [newDiscussion.id],
+  });
+
+  newsSource.save();
 };
 
-exports.postCommentAsync = async (text, discussionId, resolve, reject) => {
+/**
+ * @type {ApiRequestHandler<boolean>}
+ */
+exports.postCommentAsync = async (resolve, reject, [text, discussionId]) => {
+  /** @type {object} */
   const discussion = await Discussion.findOne({ shortId: discussionId }).exec();
 
   if (!discussion) {
@@ -56,21 +72,21 @@ exports.postCommentAsync = async (text, discussionId, resolve, reject) => {
     return;
   }
 
-  try {
-    // Add comment to discussion
-    discussion.comments.push({ text, user: 'testuser', postedAt: new Date() });
-    // Save discussion
-    discussion.save();
+  // Add comment to discussion
+  discussion.comments.push({ text, user: 'testuser', postedAt: new Date() });
+  // Save discussion
+  discussion.save();
 
-    resolve(true);
-  } catch ({ message }) {
-    reject(new Error('An error occurred while posting comment.'));
-  }
+  resolve(true);
 };
 
+/**
+ * @param {string} url
+ * @return {Promise<object>}
+ */
 async function getPageDataAsync(url) {
   // Get html at url and build a DOM from it
-  const response = await request(url.href);
+  const response = await request(url);
   const { document } = domino.createWindow(response);
 
   // Extend default metadata parse rules
@@ -87,9 +103,13 @@ async function getPageDataAsync(url) {
   return metadata;
 }
 
-// From https://stackoverflow.com/a/24657561/2058437
+/**
+ * @param {string} url
+ * @return {string}
+ */
 function addHttp(url) {
   // Add "http://" to the url, if it isn't there
+  // From https://stackoverflow.com/a/24657561/2058437
   if (!/^(?:f|ht)tps?:\/\//.test(url)) {
     return `http://${url}`;
   }

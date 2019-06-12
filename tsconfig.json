@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+      "allowJs": true,
+      "checkJs": true,
+      "experimentalDecorators": true,
+      "moduleResolution": "node",
+      "outDir": "dist",
+      "target": "esnext",
+  },
+}

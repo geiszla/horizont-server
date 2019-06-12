@@ -1,5 +1,7 @@
+/** @type {any} chalk */
 const chalk = require('chalk');
 const { highlight } = require('cli-highlight');
+
 
 /* ------------------------------------------ Globals ------------------------------------------- */
 
@@ -24,21 +26,31 @@ let isVerbose;
 
 /* ------------------------------------------ Exported ------------------------------------------ */
 
+/** @param {number} id */
 exports.setWorkerId = (id) => {
   workerId = id;
 };
+
+
+/** @param {boolean} verbosity */
 exports.setVerbosity = (verbosity) => {
   isVerbose = verbosity;
 };
 
+/** @param {string[]} args */
 exports.printVerbose = (...args) => {
   if (isVerbose) {
     outputToConsole('info', ...args);
   }
 };
 
+/** @param {string[]} args */
 exports.print = (...args) => outputToConsole('log', ...args);
+
+/** @param {string[]} args */
 exports.printWarning = (...args) => outputToConsole('warn', ...args);
+
+/** @param {string[]} args */
 exports.printError = (...args) => outputToConsole('error', ...args);
 
 exports.morganGenerator = requestLogGenerator;
@@ -48,7 +60,10 @@ exports.graphResponseLogger = graphResponseLogger;
 
 /* ------------------------------------- Locals and helpers ------------------------------------- */
 
-function requestLogGenerator(tokens, ...rest) {
+/**
+ * @type {import('morgan').FormatFn}
+ */
+function requestLogGenerator(tokens, ...requestResponse) {
   const {
     method, url, status, res,
   } = tokens;
@@ -56,21 +71,26 @@ function requestLogGenerator(tokens, ...rest) {
   // Build and color each part of the logged message
 
   // Status
-  const statusCode = status(...rest);
-  const statusText = ` [${chalk[[statusColors[statusCode[0]] || 'red']](statusCode)}]`;
+  const statusCode = status(...requestResponse);
+  if (!statusCode) {
+    return '';
+  }
+  const statusText = ` [${chalk[statusColors[statusCode[0]] || 'red'](statusCode)}]`;
 
   const message = [
     generatePrefix('request') + statusText,
-    method(...rest),
-    chalk.yellow(url(...rest)),
+    method(...requestResponse),
+    chalk.yellow(url(...requestResponse)),
   ].join(' ');
 
   // Response time
-  const responseTime = tokens['response-time'](...rest, 'content-length');
+  // @ts-ignore
+  const responseTime = parseInt(tokens['response-time'](...requestResponse, 'content-length'), 10);
   const timeText = chalk.keyword(responseTime < 100 ? 'green' : 'orange')(`${responseTime}ms`);
 
   // Response size
-  const responseSize = res(...rest, 'content-length');
+  // @ts-ignore
+  const responseSize = parseInt(res(...requestResponse, 'content-length'), 10);
 
   let sizeText;
   if (responseSize) {
@@ -86,18 +106,23 @@ function requestLogGenerator(tokens, ...rest) {
     // Add more information if it's in production mode or verbosity is set
     metadata += [
       '',
-      `referrer: ${chalk.blue(tokens.referrer(...rest))}`,
-      `address: ${chalk.blue(tokens['remote-addr'](...rest))}`,
-      `http: ${chalk.blue(tokens['http-version'](...rest))}`,
-      `user agent: ${chalk.blue(tokens['user-agent'](...rest))}`,
+      `referrer: ${chalk.blue(tokens.referrer(...requestResponse))}`,
+      `address: ${chalk.blue(tokens['remote-addr'](...requestResponse))}`,
+      `http: ${chalk.blue(tokens['http-version'](...requestResponse))}`,
+      `user agent: ${chalk.blue(tokens['user-agent'](...requestResponse))}`,
     ].join(' | ');
   }
 
   return `${message} | ${metadata}`;
 }
 
+/**
+ * @param {import('graphql').ValidationContext} context
+ * @return {any}
+ */
 function graphQueryLogger(context) {
-  /* eslint no-underscore-dangle: 0 */
+  // @ts-ignore
+  // eslint-disable-next-line no-underscore-dangle
   const queries = context._ast.definitions;
 
   queries.forEach((query) => {

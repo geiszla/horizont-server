@@ -41,7 +41,7 @@ const mutationType = new GraphQLObjectType({
         url: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { url }) => new Promise((resolve, reject) => {
-        addDiscussionByUrlAsync(url, resolve, reject);
+        addDiscussionByUrlAsync(resolve, reject, url);
       }),
     },
     postComment: {
@@ -51,7 +51,7 @@ const mutationType = new GraphQLObjectType({
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { text, discussionId }) => new Promise((resolve, reject) => {
-        postCommentAsync(text, discussionId, resolve, reject);
+        postCommentAsync(resolve, reject, text, discussionId);
       }),
     },
   },

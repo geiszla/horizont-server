@@ -1,4 +1,5 @@
 const bodyParser = require('body-parser');
+/** @type {object} chalk */
 const chalk = require('chalk');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
@@ -17,6 +18,13 @@ const {
 const database = require('./database');
 const graphQLSchema = require('./api');
 
+/**
+ * @param {{
+ *  isLoggingEnabled: boolean;
+ *  port: number;
+ *  databaseAddress: string;
+ * }} options
+ */
 module.exports = async (options) => {
   const { isLoggingEnabled, port, databaseAddress } = options;
 
@@ -59,19 +67,17 @@ module.exports = async (options) => {
   });
 
   // Add GraphQL express middleware
-  app.use(
-    '/api',
-    graphqlHTTP(request => ({
+  app.use('/api', graphqlHTTP(request => (
+    {
       schema: graphQLSchema,
       rootValue: { session: request.session },
       graphiql: !process.argv.includes('production'),
-      validationRules: graphQueryLogger,
+      validationRules: [graphQueryLogger],
       customFormatErrorFn: (error) => {
         printError(`GraphQL error: ${error.message}`);
         return false;
       },
-    })),
-  );
+    })));
 
   // Start HTTP 2 Secure Webserver
   const secureOptions = {

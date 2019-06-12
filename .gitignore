@@ -109,7 +109,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # Visual Studio Code
-.vscode
 jsconfig.json
 typings.json
 typings/

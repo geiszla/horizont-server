@@ -4,24 +4,31 @@ const {
 
 // Log unhandled promise rejections
 const unhandledPromises = [];
-process.on('unhandledRejection', (reason, promise) => {
-  /* eslint no-param-reassign: 0 */
-  promise.reason = reason;
-  unhandledPromises.push(promise);
+process.on('unhandledRejection',
+  /**
+   * @param {Error | any} reason
+   * @param {import('bluebird')} promise
+   * */
+  (reason, promise) => {
+    /* eslint no-param-reassign: 0 */
+    promise.reason = reason;
+    unhandledPromises.push(promise);
 
-  /* eslint no-underscore-dangle: 0 */
-  printWarning(`Possibly unhandled promise rejection (${promise._bitField}):`, reason.stack);
+    /* eslint no-underscore-dangle: 0 */
+    // @ts-ignore
+    printWarning(`Possibly unhandled promise rejection (${promise._bitField}):`, reason.stack);
 
-  if (!reason) {
-    console.trace('Unknown error');
-  }
-});
+    if (!reason) {
+      console.trace('Unknown error');
+    }
+  });
 
 // Log promise rejections, which were reported as unhandled (above), but then were handled later
 process.on('rejectionHandled', (promise) => {
   const index = unhandledPromises.indexOf(promise);
   unhandledPromises.splice(index, 1);
 
+  // @ts-ignore
   print(`Rejection handled (${promise._bitField}).`);
 });
 
@@ -29,7 +36,7 @@ process.on('rejectionHandled', (promise) => {
 process.on('exit', () => {
   if (unhandledPromises.length > 0) {
     const rejections = unhandledPromises.map(promise => promise.reason);
-    printWarning('Unhandled rejections before exiting:', rejections);
+    printWarning('Unhandled rejections before exiting:', ...rejections);
   }
 });
 

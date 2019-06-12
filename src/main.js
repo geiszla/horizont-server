@@ -3,12 +3,12 @@ const cpuCount = require('physical-cpu-count');
 global.Promise = require('bluebird');
 
 // Set up error handling before local modules are loaded
-require('./src/error');
+require('./error');
 
 const {
   print, printError, setVerbosity, setWorkerId,
-} = require('./src/log');
-const createServerAsync = require('./src/webserver');
+} = require('./log');
+const createServerAsync = require('./webserver');
 
 
 /* -------------------------------------- Global Constants -------------------------------------- */
@@ -81,6 +81,9 @@ function setUpWorkers() {
 let dbConnectionCount = 0;
 let webserverInstanceCount = 0;
 
+/**
+ * @param {{ type: string; data: string; }} message
+ */
 function handleWorkerMessage(message) {
   if (!message) {
     return;

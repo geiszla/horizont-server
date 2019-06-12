@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 const childProcess = require('child_process');
 
 const Promise = require('bluebird');

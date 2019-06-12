@@ -6,6 +6,10 @@ mongoose.Promise = Promise;
 
 /* ----------------------------------- Database Communication ----------------------------------- */
 
+/**
+ * @param {string} address
+ * @return {Promise<boolean>}
+ */
 exports.connectAsync = async (address) => {
   await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
   return true;
@@ -72,6 +76,7 @@ exports.Discussion = mongoose.model('Discussion', discussionSchema);
 /* ------------------------------------ News Sources Schema ------------------------------------- */
 
 const newsSourceSchema = new mongoose.Schema({
+  // @ts-ignore
   articles: [mongoose.Schema.ObjectId],
   isUser: Boolean,
   name: String,
