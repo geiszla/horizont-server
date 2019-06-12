@@ -2,12 +2,16 @@ const {
   print, printVerbose, printWarning,
 } = require('./log');
 
+
+/* ------------------------------------- Promise Rejections ------------------------------------- */
+
 // Log unhandled promise rejections
+/** @type {bluebird[]} */
 const unhandledPromises = [];
 process.on('unhandledRejection',
   /**
    * @param {Error | any} reason
-   * @param {import('bluebird')} promise
+   * @param {bluebird} promise
    * */
   (reason, promise) => {
     /* eslint no-param-reassign: 0 */
@@ -24,7 +28,7 @@ process.on('unhandledRejection',
   });
 
 // Log promise rejections, which were reported as unhandled (above), but then were handled later
-process.on('rejectionHandled', (promise) => {
+process.on('rejectionHandled', /** @param {bluebird} promise */ (promise) => {
   const index = unhandledPromises.indexOf(promise);
   unhandledPromises.splice(index, 1);
 
@@ -35,8 +39,8 @@ process.on('rejectionHandled', (promise) => {
 // Log all unhandled rejections before exiting
 process.on('exit', () => {
   if (unhandledPromises.length > 0) {
-    const rejections = unhandledPromises.map(promise => promise.reason);
-    printWarning('Unhandled rejections before exiting:', ...rejections);
+    const rejectionReasons = unhandledPromises.map(promise => promise.reason.toString());
+    printWarning('Unhandled rejections before exiting:', ...rejectionReasons);
   }
 });
 
@@ -56,6 +60,9 @@ global.Promise = new Proxy(global.Promise, {
     return targetValue;
   },
 });
+
+
+/* ------------------------------------------- Errors ------------------------------------------- */
 
 // Log caught errors (only in verbose mode)
 global.Error = new Proxy(global.Error, {

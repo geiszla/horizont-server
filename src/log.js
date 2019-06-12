@@ -20,7 +20,9 @@ const statusColors = {
   3: 'cyan',
 };
 
+/** @type {number} */
 let workerId;
+/** @type {boolean} */
 let isVerbose;
 
 
@@ -158,13 +160,17 @@ function graphResponseLogger(target, thisArg, argumentsList) {
     } else {
       exports.print('GraphQL response too long. Run in verbose mode to log everything.');
     }
-  } else {
+  } else if (isVerbose) {
     exports.print(`GraphQL response: ${highlightJSON(graphQLResponse)}`);
   }
 
   Reflect.apply(target, thisArg, argumentsList);
 }
 
+/**
+ * @param {string} methodName
+ * @param {string[]} args
+ */
 function outputToConsole(methodName, ...args) {
   let processedArguments = args;
 

@@ -11,10 +11,15 @@ const request = requestPromise.defaults({
   headers: { 'User-Agent': 'Horizont-News' },
 });
 
+
+/* ------------------------------------------ Exports ------------------------------------------- */
+
 /**
- * @type {ApiRequestHandler<any>}
+ * @param {string} urlString
+ * @param {ResolveType<any>} resolve
+ * @param {RejectType} reject
  */
-exports.addDiscussionByUrlAsync = async (resolve, reject, [urlString]) => {
+exports.addDiscussionByUrlAsync = async (urlString, resolve, reject) => {
   const processedUrlString = addHttp(urlString).replace(/[/\s]+$/, '');
 
   let url;
@@ -61,9 +66,12 @@ exports.addDiscussionByUrlAsync = async (resolve, reject, [urlString]) => {
 };
 
 /**
- * @type {ApiRequestHandler<boolean>}
+ * @param {string} text
+ * @param {string} discussionId
+ * @param {ResolveType<boolean>} resolve
+ * @param {RejectType} reject
  */
-exports.postCommentAsync = async (resolve, reject, [text, discussionId]) => {
+exports.postCommentAsync = async (text, discussionId, resolve, reject) => {
   /** @type {object} */
   const discussion = await Discussion.findOne({ shortId: discussionId }).exec();
 
@@ -79,6 +87,9 @@ exports.postCommentAsync = async (resolve, reject, [text, discussionId]) => {
 
   resolve(true);
 };
+
+
+/* ------------------------------------- Locals and helpers ------------------------------------- */
 
 /**
  * @param {string} url
