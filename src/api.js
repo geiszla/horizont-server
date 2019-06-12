@@ -1,12 +1,14 @@
 const {
   GraphQLBoolean,
+  GraphQLInt,
+  GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
 } = require('graphql');
 
-const { composeWithMongoose } = require('graphql-compose-mongoose');
+const { composeWithMongoose } = require('graphql-compose-mongoose/node8');
 
 const {
   agreeOrDisagreeAsync,
@@ -16,14 +18,20 @@ const {
   editCommentAsync,
   editDiscussionAsync,
   postCommentAsync,
-} = require('./app/discussions');
+} = require('./mutations/discussion');
+const {
+  getCommentsAsync,
+  getDiscussionsAsync,
+} = require('./queries/discussion');
 
 const { Discussion } = require('./database');
 
 
 /* ------------------------------------------- Types -------------------------------------------- */
 
-const discussionType = composeWithMongoose(Discussion).getType();
+const discussionTypeComposer = composeWithMongoose(Discussion);
+const discussionType = discussionTypeComposer.getType();
+const commentListType = discussionTypeComposer.get('comments').getType();
 
 
 /* ------------------------------------------ Queries ------------------------------------------- */
@@ -31,9 +39,24 @@ const discussionType = composeWithMongoose(Discussion).getType();
 const queryType = new GraphQLObjectType({
   name: 'Query',
   fields: {
-    getQueue: {
-      type: GraphQLBoolean,
-      resolve: () => {},
+    getDiscussions: {
+      type: new GraphQLList(discussionType),
+      args: {
+        topic: { type: new GraphQLNonNull(GraphQLString) },
+        count: { type: new GraphQLNonNull(GraphQLInt) },
+      },
+      resolve: (_, { topic, count }) => new Promise((resolve, reject) => {
+        getDiscussionsAsync(topic, count, resolve, reject);
+      }),
+    },
+    getComments: {
+      type: commentListType,
+      args: {
+        discussionId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { discussionId }) => new Promise((resolve, reject) => {
+        getCommentsAsync(discussionId, resolve, reject);
+      }),
     },
   },
 });

@@ -63,8 +63,8 @@ const discussionSchema = new mongoose.Schema({
   shortId: { type: String, default: shortid.generate },
   title: String,
   url: String,
-  usersAgreed: [String],
-  usersDisagreed: [String],
+  usersAgreed: [{ type: String, ref: 'User' }],
+  usersDisagreed: [{ type: String, ref: 'User' }],
 });
 
 discussionSchema.index({ createdAt: -1, isOpen: -1 });
@@ -78,7 +78,7 @@ exports.Discussion = mongoose.model('Discussion', discussionSchema);
 
 const newsSourceSchema = new mongoose.Schema({
   // @ts-ignore
-  articles: [mongoose.Schema.ObjectId],
+  articles: [{ type: String, ref: 'Discussion' }],
   isUser: Boolean,
   name: String,
   url: String,
