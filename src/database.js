@@ -35,6 +35,7 @@ const commentSchema = new mongoose.Schema({
   image: String,
   lastEditedAt: Date,
   postedAt: Date,
+  shortId: { type: String, default: shortid.generate },
   text: String,
   type: String,
   url: String,

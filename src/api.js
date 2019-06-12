@@ -8,7 +8,15 @@ const {
 
 const { composeWithMongoose } = require('graphql-compose-mongoose');
 
-const { addDiscussionByUrlAsync, postCommentAsync } = require('./app/discussions');
+const {
+  createDiscussionByUrlAsync,
+  deleteCommentAsync,
+  deleteDiscussionAsync,
+  editCommentAsync,
+  editDiscussionAsync,
+  postCommentAsync,
+} = require('./app/discussions');
+
 const { Discussion } = require('./database');
 
 
@@ -41,7 +49,27 @@ const mutationType = new GraphQLObjectType({
         url: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { url }) => new Promise((resolve, reject) => {
-        addDiscussionByUrlAsync(resolve, reject, url);
+        createDiscussionByUrlAsync(url, resolve, reject);
+      }),
+    },
+    deleteDiscussion: {
+      type: GraphQLBoolean,
+      args: {
+        shortId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { shortId }) => new Promise((resolve, reject) => {
+        deleteDiscussionAsync(shortId, resolve, reject);
+      }),
+    },
+    editDiscussion: {
+      type: GraphQLBoolean,
+      args: {
+        newTitle: { type: GraphQLString },
+        newDescription: { type: GraphQLString },
+        shortId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { newTitle, newDescription, shortId }) => new Promise((resolve, reject) => {
+        editDiscussionAsync(newTitle, newDescription, shortId, resolve, reject);
       }),
     },
     postComment: {
@@ -51,7 +79,26 @@ const mutationType = new GraphQLObjectType({
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { text, discussionId }) => new Promise((resolve, reject) => {
-        postCommentAsync(resolve, reject, text, discussionId);
+        postCommentAsync(text, discussionId, resolve, reject);
+      }),
+    },
+    deleteComment: {
+      type: GraphQLBoolean,
+      args: {
+        shortId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { shortId }) => new Promise((resolve, reject) => {
+        deleteCommentAsync(shortId, resolve, reject);
+      }),
+    },
+    editComment: {
+      type: GraphQLBoolean,
+      args: {
+        newText: { type: new GraphQLNonNull(GraphQLString) },
+        shortId: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (_, { newText, shortId }) => new Promise((resolve, reject) => {
+        editCommentAsync(newText, shortId, resolve, reject);
       }),
     },
   },
