@@ -1,4 +1,4 @@
-const { Discussion } = require('../database');
+const { Discussion } = require('../data');
 
 /**
  * @param {string} topic
@@ -10,7 +10,7 @@ exports.getDiscussionsAsync = async (topic, count, resolve, reject) => {
   try {
     let discussions;
     if (topic === 'local') {
-      discussions = await Discussion.find().limit(count).exec();
+      discussions = await Discussion.find().sort({ createdAt: -1 }).limit(count).exec();
     }
 
     resolve(discussions);
@@ -27,7 +27,7 @@ exports.getDiscussionsAsync = async (topic, count, resolve, reject) => {
 exports.getCommentsAsync = async (discussionId, resolve, reject) => {
   try {
     /** @type {object} */
-    const discussion = await Discussion.findOne({ shortId: discussionId }).exec();
+    const discussion = await Discussion.findOne({ shortId: discussionId }, 'comments').exec();
 
     if (!discussion) {
       reject(new Error('No discussion exists with this ID.'));

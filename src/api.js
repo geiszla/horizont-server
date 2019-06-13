@@ -24,7 +24,7 @@ const {
   getDiscussionsAsync,
 } = require('./queries/discussion');
 
-const { Discussion } = require('./database');
+const { Discussion } = require('./data');
 
 
 /* ------------------------------------------- Types -------------------------------------------- */
@@ -88,8 +88,8 @@ const mutationType = new GraphQLObjectType({
     editDiscussion: {
       type: GraphQLBoolean,
       args: {
-        newTitle: { type: GraphQLString },
-        newDescription: { type: GraphQLString },
+        newTitle: { type: new GraphQLNonNull(GraphQLString) },
+        newDescription: { type: new GraphQLNonNull(GraphQLString) },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (_, { newTitle, newDescription, shortId }) => new Promise((resolve, reject) => {

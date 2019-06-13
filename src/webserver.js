@@ -15,7 +15,7 @@ const {
   graphQueryLogger, morganGenerator, print, printError, graphResponseLogger,
 } = require('./log');
 
-const database = require('./database');
+const database = require('./data');
 const graphQLSchema = require('./api');
 
 /**
@@ -33,7 +33,9 @@ module.exports = async (options) => {
     print('Connecting to the database....\n');
   }
 
-  if (!await database.connectAsync(databaseAddress)) {
+  try {
+    await database.connectAsync(databaseAddress);
+  } catch (_) {
     process.exit(1);
   }
 

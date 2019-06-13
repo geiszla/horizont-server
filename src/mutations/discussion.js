@@ -2,7 +2,7 @@ const domino = require('domino');
 const { getMetadata, metadataRuleSets } = require('page-metadata-parser');
 const requestPromise = require('request-promise');
 
-const { Discussion, NewsSource } = require('../database');
+const { Discussion, NewsSource } = require('../data');
 const { printVerbose } = require('../log');
 
 // Request options
@@ -20,24 +20,17 @@ const request = requestPromise.defaults({
  */
 exports.agreeOrDisagreeAsync = async (isAgree, shortId, resolve, reject) => {
   try {
-    /** @type {object} */
-    const discussion = await Discussion.findOne()
-      .or([{ shortId }, { 'comments.shortId': shortId }])
-      .exec();
+    const discussionUpdate = {};
+    discussionUpdate[isAgree ? 'agreedUsernames' : 'disagreedUsernames'] = { $push: 'testuser' };
 
-    if (!discussion) {
-      reject(new Error('No discussion or comment exists with this ID.'));
-      return;
-    }
+    await Discussion.updateOne({ $or: [{ shortId }, { 'comments.shortId': shortId }] }, {
+      $cond: {
+        if: { shortId },
+        then: discussionUpdate,
+        else: { comments: { $elemMatch: { shortId }, discussionUpdate } },
+      },
+    }).exec();
 
-    if (discussion.shortId === shortId) {
-      discussion.usersAgreed.push('testuser');
-    } else {
-      const thisComment = discussion.comments.filter(comment => comment.shortId === shortId)[0];
-      thisComment[isAgree ? 'userAgreedCount' : 'userDisgreedCount']++;
-    }
-
-    discussion.save();
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t delete discussion.'));
@@ -124,18 +117,11 @@ exports.deleteDiscussionAsync = async (shortId, resolve, reject) => {
  */
 exports.editDiscussionAsync = async (newTitle, newDescription, shortId, resolve, reject) => {
   try {
-    /** @type {object} */
-    const discussion = await Discussion.findOne({ shortId }).exec();
+    await Discussion.updateOne({ shortId }, {
+      title: newTitle,
+      description: newDescription,
+    }).exec();
 
-    if (!discussion) {
-      reject(new Error('No discussion exists with this ID.'));
-      return;
-    }
-
-    discussion.title = newTitle || discussion.title;
-    discussion.description = newDescription || discussion.description;
-
-    discussion.save();
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t edit discussion.'));
@@ -153,18 +139,9 @@ exports.editDiscussionAsync = async (newTitle, newDescription, shortId, resolve,
  */
 exports.postCommentAsync = async (text, shortId, resolve, reject) => {
   try {
-    /** @type {object} */
-    const discussion = await Discussion.findOne({ shortId }).exec();
-
-    if (!discussion) {
-      reject(new Error('No discussion exists with this ID.'));
-      return;
-    }
-
-    // Add comment to discussion
-    discussion.comments.push({ text, user: 'testuser', postedAt: new Date() });
-    // Save discussion
-    discussion.save();
+    await Discussion.updateOne({ shortId }, {
+      $push: { comments: { text, user: 'testuser', postedAt: new Date() } },
+    }).exec();
 
     resolve(true);
   } catch (_) {
@@ -179,18 +156,10 @@ exports.postCommentAsync = async (text, shortId, resolve, reject) => {
  */
 exports.deleteCommentAsync = async (shortId, resolve, reject) => {
   try {
-    /** @type {object} */
-    const discussion = await Discussion.find({ 'comments.shortId': shortId }).exec();
+    await Discussion.updateOne({ 'comments.shortId': shortId }, {
+      $pull: { comments: { shortId } },
+    }).exec();
 
-    if (!discussion) {
-      reject(new Error('No comment exists with this ID.'));
-      return;
-    }
-
-    const commentIndex = discussion.comments.findIndex(comment => comment.shortId === shortId)[0];
-    discussion.comments.splice(commentIndex, 1);
-
-    discussion.save();
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t delete comment.'));
@@ -205,18 +174,9 @@ exports.deleteCommentAsync = async (shortId, resolve, reject) => {
  */
 exports.editCommentAsync = async (newText, shortId, resolve, reject) => {
   try {
-    /** @type {object} */
-    const discussion = await Discussion.findOne({ 'comments.shortId': shortId }).exec();
-
-    if (!discussion) {
-      reject(new Error('No comment exists with this ID.'));
-      return;
-    }
-
-    const editableComment = discussion.comments.filter(comment => comment.shortId === shortId)[0];
-
-    editableComment.text = newText;
-    discussion.save();
+    await Discussion.updateOne({ 'comments.shortId': shortId }, {
+      comments: { $elemMatch: { shortId }, text: newText },
+    }).exec();
 
     resolve(true);
   } catch (error) {
