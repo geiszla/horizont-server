@@ -5,7 +5,7 @@ const { highlight } = require('cli-highlight');
 
 /* ------------------------------------------ Globals ------------------------------------------- */
 
-const localeOptions = { hour12: false };
+const localeOptions = Object.freeze({ hour12: false });
 
 const prefixes = Object.freeze({
   error: '❌',
@@ -15,24 +15,24 @@ const prefixes = Object.freeze({
   request: '⚡',
 });
 
-const statusColors = {
+const statusColors = Object.freeze({
   2: 'green',
   3: 'cyan',
-};
+});
 
 /** @type {number} */
 let workerId;
+
 /** @type {boolean} */
 let isVerbose;
 
 
-/* ------------------------------------------ Exported ------------------------------------------ */
+/* ------------------------------------------ Exports ------------------------------------------- */
 
 /** @param {number} id */
 exports.setWorkerId = (id) => {
   workerId = id;
 };
-
 
 /** @param {boolean} verbosity */
 exports.setVerbosity = (verbosity) => {
@@ -123,6 +123,8 @@ function requestLogGenerator(tokens, ...requestResponse) {
  * @return {any}
  */
 function graphQueryLogger(context) {
+  console.log();
+
   // @ts-ignore
   // eslint-disable-next-line no-underscore-dangle
   const queries = context._ast.definitions;
@@ -150,6 +152,11 @@ function graphQueryLogger(context) {
   return true;
 }
 
+/**
+ * @param {Function} target
+ * @param {any} thisArg
+ * @param {ArrayLike<any> | string[]} argumentsList
+ */
 function graphResponseLogger(target, thisArg, argumentsList) {
   const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]));
 
@@ -160,7 +167,7 @@ function graphResponseLogger(target, thisArg, argumentsList) {
     } else {
       exports.print('GraphQL response too long. Run in verbose mode to log everything.');
     }
-  } else if (isVerbose) {
+  } else if (graphQLResponse.length < 150 || isVerbose) {
     exports.print(`GraphQL response: ${highlightJSON(graphQLResponse)}`);
   }
 
@@ -176,12 +183,16 @@ function outputToConsole(methodName, ...args) {
 
   // Highligh specific parts of the logged message
   if (methodName === 'error') {
+    // Make error messages red
     processedArguments = args.map(argument => chalk.red(argument));
   }
 
   console[methodName](generatePrefix(methodName), ...processedArguments);
 }
 
+/**
+ * @param {string} methodName
+ */
 function generatePrefix(methodName) {
   // Build prefix from time, log type and worker ID (if exists)
   const timeStamp = chalk.cyan.bold(new Date().toLocaleString('en-US', localeOptions));
@@ -190,6 +201,9 @@ function generatePrefix(methodName) {
   return `${timeStamp}${workerPrefix} ${prefixes[methodName]} `;
 }
 
+/**
+ * @param {string} text
+ */
 function highlightJSON(text) {
   return highlight(text, { language: 'json', ignoreIllegals: true });
 }

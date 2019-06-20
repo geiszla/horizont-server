@@ -3,14 +3,16 @@ const { Discussion } = require('../data');
 /**
  * @param {string} topic
  * @param {number} count
- * @param {ResolveType<import('mongoose').Document[]>} resolve
- * @param {RejectType} reject
+ * @param {GraphQlQueryCommonArgs} commonArgs
  */
-exports.getDiscussionsAsync = async (topic, count, resolve, reject) => {
+exports.getDiscussionsAsync = async (topic, count, ...commonArgs) => {
+  const [resolve, reject, projection] = commonArgs;
+
   try {
     let discussions;
     if (topic === 'local') {
-      discussions = await Discussion.find().sort({ createdAt: -1 }).limit(count).exec();
+      discussions = await Discussion.find({}, projection).sort({ createdAt: -1 }).limit(count)
+        .exec();
     }
 
     resolve(discussions);
@@ -21,10 +23,11 @@ exports.getDiscussionsAsync = async (topic, count, resolve, reject) => {
 
 /**
  * @param {string} discussionId
- * @param {ResolveType<import('mongoose').Document[]>} resolve
- * @param {RejectType} reject
+ * @param {GraphQlQueryCommonArgs} commonArgs
  */
-exports.getCommentsAsync = async (discussionId, resolve, reject) => {
+exports.getCommentsAsync = async (discussionId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     /** @type {object} */
     const discussion = await Discussion.findOne({ shortId: discussionId }, 'comments').exec();

@@ -43,7 +43,7 @@ const commentSchema = new mongoose.Schema({
   url: String,
 });
 
-const usernameVirtualOptions = { ref: 'user', foreignFiels: 'username' };
+const usernameVirtualOptions = { ref: 'user', foreignField: 'username' };
 commentSchema.virtual('agreedUsers', {
   ...usernameVirtualOptions, localField: 'agreedUsernames', justOne: false,
 });

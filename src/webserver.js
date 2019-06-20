@@ -61,6 +61,7 @@ module.exports = async (options) => {
   }));
 
   app.use((_, res, next) => {
+    // @ts-ignore
     res.send = new Proxy(res.send, {
       apply: graphResponseLogger,
     });

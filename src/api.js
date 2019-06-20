@@ -9,6 +9,7 @@ const {
 } = require('graphql');
 
 const { composeWithMongoose } = require('graphql-compose-mongoose/node8');
+const gqlProjection = require('graphql-advanced-projection');
 
 const {
   agreeOrDisagreeAsync,
@@ -33,6 +34,8 @@ const discussionTypeComposer = composeWithMongoose(Discussion);
 const discussionType = discussionTypeComposer.getType();
 const commentListType = discussionTypeComposer.get('comments').getType();
 
+const { project } = gqlProjection();
+
 
 /* ------------------------------------------ Queries ------------------------------------------- */
 
@@ -45,18 +48,14 @@ const queryType = new GraphQLObjectType({
         topic: { type: new GraphQLNonNull(GraphQLString) },
         count: { type: new GraphQLNonNull(GraphQLInt) },
       },
-      resolve: (_, { topic, count }) => new Promise((resolve, reject) => {
-        getDiscussionsAsync(topic, count, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(getDiscussionsAsync, ...args),
     },
     getComments: {
       type: commentListType,
       args: {
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { discussionId }) => new Promise((resolve, reject) => {
-        getCommentsAsync(discussionId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(getCommentsAsync, ...args),
     },
   },
 });
@@ -72,18 +71,14 @@ const mutationType = new GraphQLObjectType({
       args: {
         url: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { url }) => new Promise((resolve, reject) => {
-        createDiscussionByUrlAsync(url, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(createDiscussionByUrlAsync, ...args),
     },
     deleteDiscussion: {
       type: GraphQLBoolean,
       args: {
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { shortId }) => new Promise((resolve, reject) => {
-        deleteDiscussionAsync(shortId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(deleteDiscussionAsync, ...args),
     },
     editDiscussion: {
       type: GraphQLBoolean,
@@ -92,9 +87,7 @@ const mutationType = new GraphQLObjectType({
         newDescription: { type: new GraphQLNonNull(GraphQLString) },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { newTitle, newDescription, shortId }) => new Promise((resolve, reject) => {
-        editDiscussionAsync(newTitle, newDescription, shortId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(editDiscussionAsync, ...args),
     },
     postComment: {
       type: GraphQLBoolean,
@@ -102,18 +95,14 @@ const mutationType = new GraphQLObjectType({
         text: { type: new GraphQLNonNull(GraphQLString) },
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { text, discussionId }) => new Promise((resolve, reject) => {
-        postCommentAsync(text, discussionId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(postCommentAsync, ...args),
     },
     deleteComment: {
       type: GraphQLBoolean,
       args: {
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { shortId }) => new Promise((resolve, reject) => {
-        deleteCommentAsync(shortId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(deleteCommentAsync, ...args),
     },
     editComment: {
       type: GraphQLBoolean,
@@ -121,9 +110,7 @@ const mutationType = new GraphQLObjectType({
         newText: { type: new GraphQLNonNull(GraphQLString) },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { newText, shortId }) => new Promise((resolve, reject) => {
-        editCommentAsync(newText, shortId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(editCommentAsync, ...args),
     },
     agreeOrDisagree: {
       type: GraphQLBoolean,
@@ -131,11 +118,22 @@ const mutationType = new GraphQLObjectType({
         isAgree: { type: new GraphQLNonNull(GraphQLBoolean) },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
-      resolve: (_, { isAgree, shortId }) => new Promise((resolve, reject) => {
-        agreeOrDisagreeAsync(isAgree, shortId, resolve, reject);
-      }),
+      resolve: (...args) => graphQLResolver(agreeOrDisagreeAsync, ...args),
     },
   },
 });
 
 module.exports = new GraphQLSchema({ query: queryType, mutation: mutationType });
+
+/**
+ * @param {Function} queryHandler
+ * @param {any[]} args
+ * @returns {Promise<any>}
+ */
+function graphQLResolver(queryHandler, ...args) {
+  const [, queryParameters, , info] = args;
+
+  return new Promise((resolve, reject) => {
+    queryHandler(...Object.values(queryParameters), resolve, reject, project(info));
+  });
+}

@@ -11,14 +11,14 @@ const request = requestPromise.defaults({
   headers: { 'User-Agent': 'Horizont-News' },
 });
 
-
 /**
  * @param {string} shortId
  * @param {boolean} isAgree
- * @param {ResolveType<boolean>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.agreeOrDisagreeAsync = async (isAgree, shortId, resolve, reject) => {
+exports.agreeOrDisagreeAsync = async (isAgree, shortId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     const discussionUpdate = {};
     discussionUpdate[isAgree ? 'agreedUsernames' : 'disagreedUsernames'] = { $push: 'testuser' };
@@ -41,10 +41,10 @@ exports.agreeOrDisagreeAsync = async (isAgree, shortId, resolve, reject) => {
 
 /**
  * @param {string} urlString
- * @param {ResolveType<any>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.createDiscussionByUrlAsync = async (urlString, resolve, reject) => {
+exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
   const processedUrlString = addHttp(urlString).replace(/[/\s]+$/, '');
 
   let url;
@@ -96,10 +96,11 @@ exports.createDiscussionByUrlAsync = async (urlString, resolve, reject) => {
 
 /**
  * @param {string} shortId
- * @param {ResolveType<boolean>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.deleteDiscussionAsync = async (shortId, resolve, reject) => {
+exports.deleteDiscussionAsync = async (shortId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     await Discussion.deleteOne({ shortId }).exec();
     resolve(true);
@@ -112,10 +113,11 @@ exports.deleteDiscussionAsync = async (shortId, resolve, reject) => {
  * @param {string} newTitle
  * @param {string} newDescription
  * @param {string} shortId
- * @param {ResolveType<boolean>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.editDiscussionAsync = async (newTitle, newDescription, shortId, resolve, reject) => {
+exports.editDiscussionAsync = async (newTitle, newDescription, shortId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     await Discussion.updateOne({ shortId }, {
       title: newTitle,
@@ -134,10 +136,11 @@ exports.editDiscussionAsync = async (newTitle, newDescription, shortId, resolve,
 /**
  * @param {string} text
  * @param {string} shortId
- * @param {ResolveType<boolean>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.postCommentAsync = async (text, shortId, resolve, reject) => {
+exports.postCommentAsync = async (text, shortId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     await Discussion.updateOne({ shortId }, {
       $push: { comments: { text, user: 'testuser', postedAt: new Date() } },
@@ -151,10 +154,11 @@ exports.postCommentAsync = async (text, shortId, resolve, reject) => {
 
 /**
  * @param {string} shortId
- * @param {ResolveType<boolean>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.deleteCommentAsync = async (shortId, resolve, reject) => {
+exports.deleteCommentAsync = async (shortId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     await Discussion.updateOne({ 'comments.shortId': shortId }, {
       $pull: { comments: { shortId } },
@@ -169,10 +173,11 @@ exports.deleteCommentAsync = async (shortId, resolve, reject) => {
 /**
  * @param {string} newText
  * @param {string} shortId
- * @param {ResolveType<boolean>} resolve
- * @param {RejectType} reject
+ * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
  */
-exports.editCommentAsync = async (newText, shortId, resolve, reject) => {
+exports.editCommentAsync = async (newText, shortId, ...commonArgs) => {
+  const [resolve, reject] = commonArgs;
+
   try {
     await Discussion.updateOne({ 'comments.shortId': shortId }, {
       comments: { $elemMatch: { shortId }, text: newText },
