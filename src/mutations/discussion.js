@@ -81,14 +81,13 @@ exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
     });
 
     const sourceUrl = addHttp(url.hostname);
-    const existingSource = await NewsSource.findOne({ url: sourceUrl }).exec();
-    const newsSource = existingSource || new NewsSource({
+
+    await NewsSource.updateOne({
       url: sourceUrl,
       name: (await getPageDataAsync(sourceUrl)).title,
-      articles: [newDiscussion.id],
-    });
-
-    newsSource.save();
+    }, {
+      articles: { $push: newDiscussion.id },
+    }, { upsert: true }).exec();
   } catch (_) {
     reject(new Error('Couldn\'t create new discussion.'));
   }
