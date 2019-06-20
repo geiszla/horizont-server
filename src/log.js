@@ -1,4 +1,4 @@
-/** @type {any} chalk */
+/** @type {object} chalk */
 const chalk = require('chalk');
 const { highlight } = require('cli-highlight');
 
@@ -39,20 +39,20 @@ exports.setVerbosity = (verbosity) => {
   isVerbose = verbosity;
 };
 
-/** @param {string[]} args */
+/** @param {any[]} args */
 exports.printVerbose = (...args) => {
   if (isVerbose) {
     outputToConsole('info', ...args);
   }
 };
 
-/** @param {string[]} args */
+/** @param {any[]} args */
 exports.print = (...args) => outputToConsole('log', ...args);
 
-/** @param {string[]} args */
+/** @param {any[]} args */
 exports.printWarning = (...args) => outputToConsole('warn', ...args);
 
-/** @param {string[]} args */
+/** @param {any[]} args */
 exports.printError = (...args) => outputToConsole('error', ...args);
 
 exports.morganGenerator = requestLogGenerator;
@@ -88,7 +88,8 @@ function requestLogGenerator(tokens, ...requestResponse) {
   // Response time
   // @ts-ignore
   const responseTime = parseInt(tokens['response-time'](...requestResponse, 'content-length'), 10);
-  const timeText = chalk.keyword(responseTime < 100 ? 'green' : 'orange')(`${responseTime}ms`);
+  const timeColor = responseTime < 100 ? 'mediumseagreen' : 'orange';
+  const timeText = chalk.keyword(timeColor)(`${responseTime}ms`);
 
   // Response size
   // @ts-ignore
@@ -96,7 +97,8 @@ function requestLogGenerator(tokens, ...requestResponse) {
 
   let sizeText;
   if (responseSize) {
-    sizeText = chalk.keyword(responseSize < 1024 ? 'green' : 'orange')(`${responseSize} bytes`);
+    const sizeColor = responseSize < 1024 ? 'mediumseagreen' : 'orange';
+    sizeText = chalk.keyword(sizeColor)(`${responseSize} bytes`);
   } else {
     sizeText = 'unknown';
   }
@@ -115,60 +117,48 @@ function requestLogGenerator(tokens, ...requestResponse) {
     ].join(' | ');
   }
 
-  return `${message} | ${metadata}`;
+  return `${message} | ${metadata}\n`;
 }
 
 /**
- * @param {import('graphql').ValidationContext} context
- * @return {any}
+ * @param {import('graphql').ExecutionArgs} executionArgs
+ * @param {import('graphql').execute} originalExecutor
+ * @return {object}
  */
-function graphQueryLogger(context) {
-  console.log();
+function graphQueryLogger(executionArgs, originalExecutor) {
+  const currentDefinition = executionArgs.document.definitions
+    // @ts-ignore
+    .filter(definition => definition.name.value === executionArgs.operationName)[0];
 
-  // @ts-ignore
-  // eslint-disable-next-line no-underscore-dangle
-  const queries = context._ast.definitions;
+  if (currentDefinition && executionArgs.contextValue.body.query) {
+    const queryString = executionArgs.contextValue.body.query
+      .substring(currentDefinition.loc.start, currentDefinition.loc.end);
+    const queryGroups = concatenateLines(queryString).match(/(query|mutation) ([^\s]+) (.*)/);
 
-  queries.forEach((query) => {
-    const selectionText = query.selectionSet.selections.map((selection) => {
-      const argumentText = selection.arguments.map((argument) => {
-        const argumentValue = JSON.stringify(argument.value.value, null, 2);
-
-        return `${argument.name.value}: ${argumentValue}`;
-      }).join(', ');
-
-      return `${selection.name.value}(${argumentText})`;
-    }).join(', ');
-
-    if (query.operation) {
-      const operation = chalk.blue(query.operation);
-      const queryBody = highlightJSON(`{ ${selectionText} }`);
-      const operationData = `${chalk.yellow(query.name.value)} ${queryBody}`;
-
-      exports.print(`GraphQL API request: ${operation} ${operationData}`);
+    if (queryGroups) {
+      exports.print(`GraphQL API request: ${chalk.blue(queryGroups[1])} ${chalk.yellow(queryGroups[2])} ${highlightJSON(queryGroups[3])}`);
     }
-  });
+  }
 
-  return true;
+  return originalExecutor(executionArgs);
 }
 
 /**
  * @param {Function} target
  * @param {any} thisArg
- * @param {ArrayLike<any> | string[]} argumentsList
+ * @param {any[]} argumentsList
  */
 function graphResponseLogger(target, thisArg, argumentsList) {
-  const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]));
+  const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]), null, 2);
 
   if (graphQLResponse.length > 150 && graphQLResponse.length < 1024) {
     if (isVerbose) {
-      const logString = highlightJSON(JSON.stringify(JSON.parse(graphQLResponse), null, 2));
-      exports.printVerbose(`GraphQL response: ${logString}`);
+      exports.printVerbose(`GraphQL response: ${highlightJSON(graphQLResponse)}`);
     } else {
-      exports.print('GraphQL response too long. Run in verbose mode to log everything.');
+      exports.print('GraphQL response too long. Run in verbose mode to log all responses.');
     }
   } else if (graphQLResponse.length < 150 || isVerbose) {
-    exports.print(`GraphQL response: ${highlightJSON(graphQLResponse)}`);
+    exports.print(`GraphQL response: ${highlightJSON(concatenateLines(graphQLResponse))}`);
   }
 
   Reflect.apply(target, thisArg, argumentsList);
@@ -206,4 +196,11 @@ function generatePrefix(methodName) {
  */
 function highlightJSON(text) {
   return highlight(text, { language: 'json', ignoreIllegals: true });
+}
+
+/**
+ * @param {string} text
+ */
+function concatenateLines(text) {
+  return text.replace(/\s{2,}/g, ' ').replace(/(\r?\n)+/g, ' ');
 }

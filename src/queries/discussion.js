@@ -1,4 +1,5 @@
 const { Discussion } = require('../data');
+const { printVerbose } = require('../log');
 
 /**
  * @param {string} topic
@@ -18,6 +19,7 @@ exports.getDiscussionsAsync = async (topic, count, ...commonArgs) => {
     resolve(discussions);
   } catch (error) {
     reject(new Error('Couldn\'t get discussions.'));
+    printVerbose(error);
   }
 };
 
@@ -40,5 +42,6 @@ exports.getCommentsAsync = async (discussionId, ...commonArgs) => {
     resolve(discussion.comments);
   } catch (error) {
     reject(new Error('Couldn\'t get comments for discussion.'));
+    printVerbose(error);
   }
 };

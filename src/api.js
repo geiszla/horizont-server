@@ -32,7 +32,7 @@ const { Discussion } = require('./data');
 
 const discussionTypeComposer = composeWithMongoose(Discussion);
 const discussionType = discussionTypeComposer.getType();
-const commentListType = discussionTypeComposer.get('comments').getType();
+const commentType = discussionTypeComposer.get('comments').getType();
 
 const { project } = gqlProjection();
 
@@ -51,7 +51,7 @@ const queryType = new GraphQLObjectType({
       resolve: (...args) => graphQLResolver(getDiscussionsAsync, ...args),
     },
     getComments: {
-      type: commentListType,
+      type: new GraphQLList(commentType),
       args: {
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
       },

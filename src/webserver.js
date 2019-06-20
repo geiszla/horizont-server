@@ -10,9 +10,10 @@ const https = require('https');
 const morgan = require('morgan');
 const path = require('path');
 const session = require('express-session');
+const { execute } = require('graphql');
 
 const {
-  graphQueryLogger, morganGenerator, print, printError, graphResponseLogger,
+  graphQueryLogger, morganGenerator, print, printError, printVerbose, graphResponseLogger,
 } = require('./log');
 
 const database = require('./data');
@@ -70,17 +71,17 @@ module.exports = async (options) => {
   });
 
   // Add GraphQL express middleware
-  app.use('/api', graphqlHTTP(request => (
-    {
-      schema: graphQLSchema,
-      rootValue: { session: request.session },
-      graphiql: !process.argv.includes('production'),
-      validationRules: [graphQueryLogger],
-      customFormatErrorFn: (error) => {
-        printError(`GraphQL error: ${error.message}`);
-        return false;
-      },
-    })));
+  app.use('/api', graphqlHTTP(request => ({
+    schema: graphQLSchema,
+    rootValue: { session: request.session },
+    graphiql: !process.argv.includes('production'),
+    customExecuteFn: executionArgs => graphQueryLogger(executionArgs, execute),
+    customFormatErrorFn(error) {
+      printError(`Error while processing GraphQL request: ${error.message}`);
+      printVerbose(error);
+      return false;
+    },
+  })));
 
   // Start HTTP 2 Secure Webserver
   const secureOptions = {

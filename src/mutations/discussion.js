@@ -34,6 +34,7 @@ exports.agreeOrDisagreeAsync = async (isAgree, shortId, ...commonArgs) => {
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t delete discussion.'));
+    printVerbose(error);
   }
 };
 
@@ -41,7 +42,7 @@ exports.agreeOrDisagreeAsync = async (isAgree, shortId, ...commonArgs) => {
 
 /**
  * @param {string} urlString
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @param {GraphQLResolverCommonArgs<import('mongoose').Document>} commonArgs
  */
 exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
   const [resolve, reject] = commonArgs;
@@ -55,20 +56,19 @@ exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
     return;
   }
 
+  // Create discussion
   try {
     const existingDiscussion = await Discussion.findOne({ url }).exec();
     const pageData = existingDiscussion || await getPageDataAsync(url.href);
 
     if (pageData === existingDiscussion) {
-      printVerbose('[Discussion] Using page data from existing discussion.');
+      printVerbose('[Discussion] Using page data of existing discussion.');
     }
-
-    resolve(pageData);
 
     // Create new discussion
     let newDiscussion = new Discussion({
       createdAt: new Date(),
-      owner: 'testuser',
+      ownerUsername: 'testuser',
       url: url.href,
     });
 
@@ -80,16 +80,37 @@ exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
       title: pageData.title,
     });
 
-    const sourceUrl = addHttp(url.hostname);
+    resolve(newDiscussion);
+    newDiscussion.save();
 
+    // Update other discussions and news sources
+    if (pageData !== existingDiscussion) {
+      const newPageData = await getPageDataAsync(url.href);
+
+      // Update outdated page data in existing discussions
+      const differenceObject = {};
+      Object.entries(pageData).forEach(([key, value]) => {
+        if (newPageData[key] !== value) {
+          differenceObject[key] = newPageData[key];
+        }
+      });
+
+      if (Object.keys(differenceObject).length > 0) {
+        printVerbose('[Discussion] Updating existing discussions.');
+        await Discussion.updateOne({ url: url.href }, differenceObject);
+      }
+    }
+
+    const sourceUrl = addHttp(url.hostname);
     await NewsSource.updateOne({
       url: sourceUrl,
       name: (await getPageDataAsync(sourceUrl)).title,
     }, {
-      articles: { $push: newDiscussion.id },
+      $push: { articles: newDiscussion.id },
     }, { upsert: true }).exec();
-  } catch (_) {
+  } catch (error) {
     reject(new Error('Couldn\'t create new discussion.'));
+    printVerbose(error);
   }
 };
 
@@ -105,6 +126,7 @@ exports.deleteDiscussionAsync = async (shortId, ...commonArgs) => {
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t delete discussion.'));
+    printVerbose(error);
   }
 };
 
@@ -126,6 +148,7 @@ exports.editDiscussionAsync = async (newTitle, newDescription, shortId, ...commo
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t edit discussion.'));
+    printVerbose(error);
   }
 };
 
@@ -146,8 +169,9 @@ exports.postCommentAsync = async (text, shortId, ...commonArgs) => {
     }).exec();
 
     resolve(true);
-  } catch (_) {
+  } catch (error) {
     reject(new Error('Couldn\'t post comment.'));
+    printVerbose(error);
   }
 };
 
@@ -166,6 +190,7 @@ exports.deleteCommentAsync = async (shortId, ...commonArgs) => {
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t delete comment.'));
+    printVerbose(error);
   }
 };
 
@@ -185,6 +210,7 @@ exports.editCommentAsync = async (newText, shortId, ...commonArgs) => {
     resolve(true);
   } catch (error) {
     reject(new Error('Couldn\'t edit comment.'));
+    printVerbose(error);
   }
 };
 

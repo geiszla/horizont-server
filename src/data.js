@@ -99,7 +99,7 @@ exports.Discussion = mongoose.model('Discussion', discussionSchema);
 /* ------------------------------------ News Sources Schema ------------------------------------- */
 
 const newsSourceSchema = new mongoose.Schema({
-  articles: [{ type: String, ref: 'Discussion' }],
+  articles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discussion' }],
   isUser: Boolean,
   name: String,
   url: String,
