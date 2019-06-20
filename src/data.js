@@ -50,6 +50,9 @@ commentSchema.virtual('agreedUsers', {
 commentSchema.virtual('disagreedUsers', {
   ...usernameVirtualOptions, localField: 'disagreedUsernames', justOne: false,
 });
+commentSchema.virtual('owner', {
+  ...usernameVirtualOptions, localField: 'ownerUsername', justOne: true,
+});
 
 const locationSchema = new mongoose.Schema({
   coordinates: {
@@ -57,11 +60,6 @@ const locationSchema = new mongoose.Schema({
     longitude: Number,
   },
   name: String,
-});
-
-
-commentSchema.virtual('owner', {
-  ...usernameVirtualOptions, localField: 'ownerUsername', justOne: true,
 });
 
 // Discussions
@@ -107,6 +105,6 @@ const newsSourceSchema = new mongoose.Schema({
   url: String,
 });
 
-discussionSchema.index({ name: 1 });
+discussionSchema.index({ url: 1 });
 
 exports.NewsSource = mongoose.model('NewsSource', newsSourceSchema);
