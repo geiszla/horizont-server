@@ -12,10 +12,17 @@
  */
 
 /**
- * @typedef {[ResolveType<T>, RejectType, string]} GraphQLResolverCommonArgs<T>
+ * @typedef {(
+ *  queryArgs: T,
+ *  resolve: ResolveType<U>,
+ *  reject: RejectType,
+ *  projection: string,
+ * ) => void} GraphQLResolver<T,U>
  * @template T
+ * @template U
  */
 
 /**
- * @typedef {GraphQLResolverCommonArgs<import('mongoose').Document[]>} GraphQlQueryCommonArgs
+ * @typedef {GraphQLResolver<T,import('mongoose').Document[]>} GraphQLQueryResolver
+ * @template T
  */

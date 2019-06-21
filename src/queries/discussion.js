@@ -2,13 +2,9 @@ const { Discussion } = require('../data');
 const { printVerbose } = require('../log');
 
 /**
- * @param {string} topic
- * @param {number} count
- * @param {GraphQlQueryCommonArgs} commonArgs
+ * @type {GraphQLQueryResolver<{ topic: string, count: number }>}
  */
-exports.getDiscussionsAsync = async (topic, count, ...commonArgs) => {
-  const [resolve, reject, projection] = commonArgs;
-
+exports.getDiscussionsAsync = async ({ topic, count }, resolve, reject, projection) => {
   try {
     let discussions;
     if (topic === 'local') {
@@ -24,15 +20,14 @@ exports.getDiscussionsAsync = async (topic, count, ...commonArgs) => {
 };
 
 /**
- * @param {string} discussionId
- * @param {GraphQlQueryCommonArgs} commonArgs
+ * @type {GraphQLQueryResolver<{ discussionId: string, count: number }>}
  */
-exports.getCommentsAsync = async (discussionId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.getCommentsAsync = async ({ discussionId, count }, resolve, reject) => {
   try {
     /** @type {object} */
-    const discussion = await Discussion.findOne({ shortId: discussionId }, 'comments').exec();
+    const discussion = await Discussion
+      .findOne({ shortId: discussionId }, { comments: { $slice: count } })
+      .exec();
 
     if (!discussion) {
       reject(new Error('No discussion exists with this ID.'));

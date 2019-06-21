@@ -12,13 +12,9 @@ const request = requestPromise.defaults({
 });
 
 /**
- * @param {string} shortId
- * @param {boolean} isAgree
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @type {GraphQLResolver<{ shortId: string, isAgree: boolean }, boolean>}
  */
-exports.agreeOrDisagreeAsync = async (isAgree, shortId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.agreeOrDisagreeAsync = async ({ shortId, isAgree }, resolve, reject) => {
   try {
     const discussionUpdate = {};
     discussionUpdate[isAgree ? 'agreedUsernames' : 'disagreedUsernames'] = { $push: 'testuser' };
@@ -41,11 +37,9 @@ exports.agreeOrDisagreeAsync = async (isAgree, shortId, ...commonArgs) => {
 /* -------------------------------- Discussion Request Handlers --------------------------------- */
 
 /**
- * @param {string} urlString
- * @param {GraphQLResolverCommonArgs<import('mongoose').Document>} commonArgs
+ * @type {GraphQLResolver<{ urlString: string }, import('mongoose').Document>}
  */
-exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
+exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
   const processedUrlString = addHttp(urlString).replace(/[/\s]+$/, '');
 
   let url;
@@ -115,12 +109,9 @@ exports.createDiscussionByUrlAsync = async (urlString, ...commonArgs) => {
 };
 
 /**
- * @param {string} shortId
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @type {GraphQLResolver<{ shortId: string }, boolean>}
  */
-exports.deleteDiscussionAsync = async (shortId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.deleteDiscussionAsync = async ({ shortId }, resolve, reject) => {
   try {
     await Discussion.deleteOne({ shortId }).exec();
     resolve(true);
@@ -131,14 +122,9 @@ exports.deleteDiscussionAsync = async (shortId, ...commonArgs) => {
 };
 
 /**
- * @param {string} newTitle
- * @param {string} newDescription
- * @param {string} shortId
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @type {GraphQLResolver<{ newTitle: string, newDescription: string, shortId: string }, boolean>}
  */
-exports.editDiscussionAsync = async (newTitle, newDescription, shortId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, resolve, reject) => {
   try {
     await Discussion.updateOne({ shortId }, {
       title: newTitle,
@@ -156,13 +142,9 @@ exports.editDiscussionAsync = async (newTitle, newDescription, shortId, ...commo
 /* ---------------------------------- Comment Request Handlers ---------------------------------- */
 
 /**
- * @param {string} text
- * @param {string} shortId
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @type {GraphQLResolver<{ text: string, shortId: string }, boolean>}
  */
-exports.postCommentAsync = async (text, shortId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.postCommentAsync = async ({ text, shortId }, resolve, reject) => {
   try {
     await Discussion.updateOne({ shortId }, {
       $push: { comments: { text, user: 'testuser', postedAt: new Date() } },
@@ -176,12 +158,9 @@ exports.postCommentAsync = async (text, shortId, ...commonArgs) => {
 };
 
 /**
- * @param {string} shortId
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @type {GraphQLResolver<{ shortId: string }, boolean>}
  */
-exports.deleteCommentAsync = async (shortId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.deleteCommentAsync = async ({ shortId }, resolve, reject) => {
   try {
     await Discussion.updateOne({ 'comments.shortId': shortId }, {
       $pull: { comments: { shortId } },
@@ -195,13 +174,9 @@ exports.deleteCommentAsync = async (shortId, ...commonArgs) => {
 };
 
 /**
- * @param {string} newText
- * @param {string} shortId
- * @param {GraphQLResolverCommonArgs<boolean>} commonArgs
+ * @type {GraphQLResolver<{ newText: string, shortId: string }, boolean>}
  */
-exports.editCommentAsync = async (newText, shortId, ...commonArgs) => {
-  const [resolve, reject] = commonArgs;
-
+exports.editCommentAsync = async ({ newText, shortId }, resolve, reject) => {
   try {
     await Discussion.updateOne({ 'comments.shortId': shortId }, {
       comments: { $elemMatch: { shortId }, text: newText },

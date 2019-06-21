@@ -54,6 +54,7 @@ const queryType = new GraphQLObjectType({
       type: new GraphQLList(commentType),
       args: {
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
+        count: { type: GraphQLInt },
       },
       resolve: (...args) => graphQLResolver(getCommentsAsync, ...args),
     },
@@ -131,9 +132,9 @@ module.exports = new GraphQLSchema({ query: queryType, mutation: mutationType })
  * @returns {Promise<any>}
  */
 function graphQLResolver(queryHandler, ...args) {
-  const [, queryParameters, , info] = args;
+  const [, queryArgs, , info] = args;
 
   return new Promise((resolve, reject) => {
-    queryHandler(...Object.values(queryParameters), resolve, reject, project(info));
+    queryHandler(queryArgs, resolve, reject, project(info));
   });
 }
