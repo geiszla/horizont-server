@@ -85,8 +85,8 @@ const mutationType = new GraphQLObjectType({
     editDiscussion: {
       type: GraphQLBoolean,
       args: {
-        newTitle: { type: new GraphQLNonNull(GraphQLString) },
-        newDescription: { type: new GraphQLNonNull(GraphQLString) },
+        newTitle: { type: GraphQLString },
+        newDescription: { type: GraphQLString },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (...args) => graphQLResolver(editDiscussionAsync, ...args),

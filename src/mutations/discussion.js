@@ -62,7 +62,6 @@ exports.createDiscussionByUrlAsync = async ({ url }, resolve, reject) => {
 
     // Create new discussion
     let newDiscussion = new Discussion({
-      createdAt: new Date(),
       ownerUsername: 'testuser',
       url: urlObject.href,
     });
@@ -108,11 +107,21 @@ exports.deleteDiscussionAsync = async ({ shortId }, resolve, reject) => {
  */
 exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, resolve, reject) => {
   try {
-    await Discussion.updateOne({ shortId }, {
-      title: newTitle,
-      description: newDescription,
-    }).exec();
+    const updateOptions = {};
 
+    if (newTitle || newDescription) {
+      updateOptions.lastEditedAt = new Date();
+
+      if (newTitle) {
+        updateOptions.title = newTitle;
+      }
+
+      if (newDescription) {
+        updateOptions.description = newDescription;
+      }
+    }
+
+    await Discussion.updateOne({ shortId }, updateOptions).exec();
     resolve(true);
   } catch (error) {
     reject(error, 'Couldn\'t edit discussion.');
@@ -128,7 +137,7 @@ exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, reso
 exports.postCommentAsync = async ({ text, discussionId }, resolve, reject) => {
   try {
     await Discussion.updateOne({ shortId: discussionId }, {
-      $push: { comments: { text, ownerUsername: 'testuser', postedAt: new Date() } },
+      $push: { comments: { text, ownerUsername: 'testuser' } },
     }).exec();
 
     resolve(true);
@@ -158,7 +167,10 @@ exports.deleteCommentAsync = async ({ shortId }, resolve, reject) => {
 exports.editCommentAsync = async ({ newText, shortId }, resolve, reject) => {
   try {
     await Discussion.updateOne({ 'comments.shortId': shortId }, {
-      comments: { $elemMatch: { shortId }, text: newText },
+      $set: {
+        'comments.$.text': newText,
+        'comments.$.lastEditedAt': new Date(),
+      },
     }).exec();
 
     resolve(true);
