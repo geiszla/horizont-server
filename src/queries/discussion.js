@@ -1,5 +1,4 @@
 const { Discussion } = require('../data');
-const { printVerbose } = require('../log');
 
 /**
  * @type {GraphQLQueryResolver<{ topic: string, count: number }>}
@@ -14,8 +13,7 @@ exports.getDiscussionsAsync = async ({ topic, count }, resolve, reject, projecti
 
     resolve(discussions);
   } catch (error) {
-    reject(new Error('Couldn\'t get discussions.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t get discussions.');
   }
 };
 
@@ -30,13 +28,12 @@ exports.getCommentsAsync = async ({ discussionId, count }, resolve, reject) => {
       .exec();
 
     if (!discussion) {
-      reject(new Error('No discussion exists with this ID.'));
+      reject(null, 'No discussion exists with this ID.');
       return;
     }
 
     resolve(discussion.comments);
   } catch (error) {
-    reject(new Error('Couldn\'t get comments for discussion.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t get comments for discussion.');
   }
 };

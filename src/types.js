@@ -8,14 +8,14 @@
  */
 
 /**
- * @typedef {(error: Error) => void} RejectType
+ * @typedef {(error: Error, message: string) => void} ResolverRejectType
  */
 
 /**
  * @typedef {(
  *  queryArgs: T,
  *  resolve: ResolveType<U>,
- *  reject: RejectType,
+ *  reject: ResolverRejectType,
  *  projection: string,
  * ) => void} GraphQLResolver<T,U>
  * @template T

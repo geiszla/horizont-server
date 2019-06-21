@@ -26,6 +26,7 @@ const {
 } = require('./queries/discussion');
 
 const { Discussion } = require('./data');
+const { printVerbose } = require('./log');
 
 
 /* ------------------------------------------- Types -------------------------------------------- */
@@ -129,12 +130,20 @@ module.exports = new GraphQLSchema({ query: queryType, mutation: mutationType })
 /**
  * @param {Function} queryHandler
  * @param {any[]} args
- * @returns {Promise<any>}
+ * @returns {Promise}
  */
 function graphQLResolver(queryHandler, ...args) {
   const [, queryArgs, , info] = args;
 
   return new Promise((resolve, reject) => {
-    queryHandler(queryArgs, resolve, reject, project(info));
+    const loggerReject = (error, message) => {
+      if (error) {
+        printVerbose(error);
+      }
+
+      reject(new Error(message));
+    };
+
+    queryHandler(queryArgs, resolve, loggerReject, project(info));
   });
 }

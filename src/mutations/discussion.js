@@ -29,8 +29,7 @@ exports.agreeOrDisagreeAsync = async ({ shortId, isAgree }, resolve, reject) => 
 
     resolve(true);
   } catch (error) {
-    reject(new Error('Couldn\'t delete discussion.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t delete discussion.');
   }
 };
 
@@ -45,8 +44,8 @@ exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
   let url;
   try {
     url = new URL(processedUrlString);
-  } catch (_) {
-    reject(new Error('The given URL is not valid.'));
+  } catch (error) {
+    reject(error, 'The given URL is not valid.');
     return;
   }
 
@@ -103,8 +102,7 @@ exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
       $push: { articles: newDiscussion.id },
     }, { upsert: true }).exec();
   } catch (error) {
-    reject(new Error('Couldn\'t create new discussion.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t create new discussion.');
   }
 };
 
@@ -116,8 +114,7 @@ exports.deleteDiscussionAsync = async ({ shortId }, resolve, reject) => {
     await Discussion.deleteOne({ shortId }).exec();
     resolve(true);
   } catch (error) {
-    reject(new Error('Couldn\'t delete discussion.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t delete discussion.');
   }
 };
 
@@ -133,8 +130,7 @@ exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, reso
 
     resolve(true);
   } catch (error) {
-    reject(new Error('Couldn\'t edit discussion.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t edit discussion.');
   }
 };
 
@@ -152,8 +148,7 @@ exports.postCommentAsync = async ({ text, shortId }, resolve, reject) => {
 
     resolve(true);
   } catch (error) {
-    reject(new Error('Couldn\'t post comment.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t post comment.');
   }
 };
 
@@ -168,8 +163,7 @@ exports.deleteCommentAsync = async ({ shortId }, resolve, reject) => {
 
     resolve(true);
   } catch (error) {
-    reject(new Error('Couldn\'t delete comment.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t delete comment.');
   }
 };
 
@@ -184,8 +178,7 @@ exports.editCommentAsync = async ({ newText, shortId }, resolve, reject) => {
 
     resolve(true);
   } catch (error) {
-    reject(new Error('Couldn\'t edit comment.'));
-    printVerbose(error);
+    reject(error, 'Couldn\'t edit comment.');
   }
 };
 
