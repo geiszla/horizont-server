@@ -126,9 +126,10 @@ function requestLogGenerator(tokens, ...requestResponse) {
  * @return {object}
  */
 function graphQueryLogger(executionArgs, originalExecutor) {
+  const { operationName } = executionArgs;
   const currentDefinition = executionArgs.document.definitions
     // @ts-ignore
-    .filter(definition => definition.name.value === executionArgs.operationName)[0];
+    .filter(definition => definition.name && definition.name.value === operationName)[0];
 
   if (currentDefinition && executionArgs.contextValue.body.query) {
     const queryString = executionArgs.contextValue.body.query

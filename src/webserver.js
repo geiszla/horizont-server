@@ -13,7 +13,13 @@ const session = require('express-session');
 const { execute } = require('graphql');
 
 const {
-  graphQueryLogger, morganGenerator, print, printError, printVerbose, graphResponseLogger,
+  graphQueryLogger,
+  graphResponseLogger,
+  morganGenerator,
+  print,
+  printError,
+  printVerbose,
+  setVerbosity,
 } = require('./log');
 
 const database = require('./data');
@@ -21,29 +27,62 @@ const graphQLSchema = require('./api');
 
 /**
  * @param {{
- *  isLoggingEnabled: boolean;
- *  port: number;
- *  databaseAddress: string;
- * }} options
- */
-module.exports = async (options) => {
-  const { isLoggingEnabled, port, databaseAddress } = options;
+  *  databaseAddress: string;
+  *  isLoggingEnabled: boolean;
+  *  isVerbose: boolean;
+  *  port: number;
+  * }} options
+  */
+exports.startWebserverAsync = async (options) => {
+  const {
+    databaseAddress, isLoggingEnabled, isVerbose, port,
+  } = options;
 
+  const app = await exports.createWebserverAsync(isLoggingEnabled, isVerbose, databaseAddress);
+
+  // Start HTTP 2 Secure Webserver
+  const secureOptions = {
+    key: fs.readFileSync(path.join(__dirname, '../ssl/key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../ssl/cert.crt')),
+    passphrase: 'iManT',
+  };
+
+  https.createServer(secureOptions, app).listen(port, () => {
+    if (isLoggingEnabled) {
+      const url = chalk.blue(`https://localhost:${port}/\n`);
+      print(`Webserver is listening at ${url}`);
+    } else if (typeof process.send === 'function') {
+      process.send({ type: 'webserver', data: 'online' });
+    }
+  });
+};
+
+/**
+ * @param {boolean} isLoggingEnabled
+ * @param {boolean} isVerbose
+ * @param {string} databaseAddress
+ */
+exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddress) => {
   // Connect to MongoDB Database
   if (isLoggingEnabled) {
     print('Connecting to the database....\n');
   }
 
+  if (isVerbose) {
+    setVerbosity(true);
+  }
+
   try {
     await database.connectAsync(databaseAddress);
   } catch (_) {
+    printError('Couldn\'t connect to the database.');
     process.exit(1);
   }
 
   if (isLoggingEnabled) {
     const url = chalk.blue(`mongodb://${databaseAddress}/`);
     print(`Connected to MongoDB server at ${url}`);
-  } else {
+  } else if (typeof process.send === 'function') {
     process.send({ type: 'database', data: 'connected' });
   }
 
@@ -83,19 +122,5 @@ module.exports = async (options) => {
     },
   })));
 
-  // Start HTTP 2 Secure Webserver
-  const secureOptions = {
-    key: fs.readFileSync(path.join(__dirname, '../ssl/key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, '../ssl/cert.crt')),
-    passphrase: 'iManT',
-  };
-
-  https.createServer(secureOptions, app).listen(port, () => {
-    if (isLoggingEnabled) {
-      const url = chalk.blue(`https://localhost:${port}/\n`);
-      print(`Webserver is listening at ${url}`);
-    } else {
-      process.send({ type: 'webserver', data: 'online' });
-    }
-  });
+  return app;
 };

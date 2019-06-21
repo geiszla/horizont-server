@@ -5,10 +5,8 @@ global.Promise = require('bluebird');
 // Set up error handling before local modules are loaded
 require('./error');
 
-const {
-  print, printError, setVerbosity, setWorkerId,
-} = require('./log');
-const createServerAsync = require('./webserver');
+const { print, printError, setWorkerId } = require('./log');
+const { startWebserverAsync } = require('./webserver');
 
 
 /* -------------------------------------- Global Constants -------------------------------------- */
@@ -19,10 +17,6 @@ const isProduction = process.argv[2] === 'production';
 
 
 /* ----------------------------------------- Clustering ----------------------------------------- */
-
-if (process.argv.includes('verbose')) {
-  setVerbosity(true);
-}
 
 const workers = [];
 if (isProduction && cluster.isMaster) {
@@ -40,11 +34,12 @@ if (isProduction && cluster.isMaster) {
   // Run server setup
   const serverOptions = {
     isLoggingEnabled: !isProduction || (cluster.worker && cluster.worker.id > cpuCount),
+    isVerbose: process.argv.includes('verbose'),
     port: webserverPort,
     databaseAddress,
   };
 
-  createServerAsync(serverOptions);
+  startWebserverAsync(serverOptions);
 }
 
 function setUpWorkers() {
