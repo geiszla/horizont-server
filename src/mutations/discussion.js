@@ -36,14 +36,14 @@ exports.agreeOrDisagreeAsync = async ({ shortId, isAgree }, resolve, reject) => 
 /* -------------------------------- Discussion Request Handlers --------------------------------- */
 
 /**
- * @type {GraphQLResolver<{ urlString: string }, import('mongoose').Document>}
+ * @type {GraphQLResolver<{ url: string }, import('mongoose').Document>}
  */
-exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
-  const processedUrlString = addHttp(urlString).replace(/[/\s]+$/, '');
+exports.createDiscussionByUrlAsync = async ({ url }, resolve, reject) => {
+  const processedUrlString = addHttp(url).replace(/[/\s]+$/, '');
 
-  let url;
+  let urlObject;
   try {
-    url = new URL(processedUrlString);
+    urlObject = new URL(processedUrlString);
   } catch (error) {
     reject(error, 'The given URL is not valid.');
     return;
@@ -51,8 +51,8 @@ exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
 
   // Create discussion
   try {
-    const existingDiscussion = await Discussion.findOne({ url }).exec();
-    const pageData = existingDiscussion || await getPageDataAsync(url.href);
+    const existingDiscussion = await Discussion.findOne({ url: urlObject.href }).exec();
+    const pageData = existingDiscussion || await getPageDataAsync(urlObject.href);
 
     if (pageData === existingDiscussion) {
       printVerbose('[Discussion] Using page data of existing discussion.');
@@ -62,7 +62,7 @@ exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
     let newDiscussion = new Discussion({
       createdAt: new Date(),
       ownerUsername: 'testuser',
-      url: url.href,
+      url: urlObject.href,
     });
 
     // Add page data to discussion
@@ -78,7 +78,7 @@ exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
 
     // Update other discussions and news sources
     if (pageData !== existingDiscussion) {
-      const newPageData = await getPageDataAsync(url.href);
+      const newPageData = await getPageDataAsync(urlObject.href);
 
       // Update outdated page data in existing discussions
       const differenceObject = {};
@@ -90,11 +90,11 @@ exports.createDiscussionByUrlAsync = async ({ urlString }, resolve, reject) => {
 
       if (Object.keys(differenceObject).length > 0) {
         printVerbose('[Discussion] Updating existing discussions.');
-        await Discussion.updateOne({ url: url.href }, differenceObject);
+        await Discussion.updateOne({ url: urlObject.href }, differenceObject);
       }
     }
 
-    const sourceUrl = addHttp(url.hostname);
+    const sourceUrl = addHttp(urlObject.hostname);
     await NewsSource.updateOne({
       url: sourceUrl,
       name: (await getPageDataAsync(sourceUrl)).title,
@@ -138,12 +138,12 @@ exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, reso
 /* ---------------------------------- Comment Request Handlers ---------------------------------- */
 
 /**
- * @type {GraphQLResolver<{ text: string, shortId: string }, boolean>}
+ * @type {GraphQLResolver<{ text: string, discussionId: string }, boolean>}
  */
-exports.postCommentAsync = async ({ text, shortId }, resolve, reject) => {
+exports.postCommentAsync = async ({ text, discussionId }, resolve, reject) => {
   try {
-    await Discussion.updateOne({ shortId }, {
-      $push: { comments: { text, user: 'testuser', postedAt: new Date() } },
+    await Discussion.updateOne({ shortId: discussionId }, {
+      $push: { comments: { text, ownerUsername: 'testuser', postedAt: new Date() } },
     }).exec();
 
     resolve(true);

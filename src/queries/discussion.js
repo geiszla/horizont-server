@@ -22,9 +22,11 @@ exports.getDiscussionsAsync = async ({ topic, count }, resolve, reject, projecti
  */
 exports.getCommentsAsync = async ({ discussionId, count }, resolve, reject) => {
   try {
+    const commentProjection = typeof count === 'number' ? { $slice: count } : 1;
+
     /** @type {object} */
     const discussion = await Discussion
-      .findOne({ shortId: discussionId }, { comments: { $slice: count } })
+      .findOne({ shortId: discussionId }, { comments: commentProjection })
       .exec();
 
     if (!discussion) {
