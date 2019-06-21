@@ -23,6 +23,10 @@
  */
 
 /**
- * @typedef {GraphQLResolver<T,import('mongoose').Document[]>} GraphQLQueryResolver
+ * @typedef {import('mongoose').Document} MongooseDocument
+ */
+
+/**
+ * @typedef {GraphQLResolver<T,MongooseDocument[]>} GraphQLQueryResolver
  * @template T
  */

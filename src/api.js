@@ -44,7 +44,7 @@ const queryType = new GraphQLObjectType({
   name: 'Query',
   fields: {
     getDiscussions: {
-      type: new GraphQLList(discussionType),
+      type: new GraphQLNonNull(new GraphQLList(discussionType)),
       args: {
         topic: { type: new GraphQLNonNull(GraphQLString) },
         count: { type: new GraphQLNonNull(GraphQLInt) },
@@ -52,7 +52,7 @@ const queryType = new GraphQLObjectType({
       resolve: (...args) => graphQLResolver(getDiscussionsAsync, ...args),
     },
     getComments: {
-      type: new GraphQLList(commentType),
+      type: new GraphQLNonNull(new GraphQLList(commentType)),
       args: {
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
         count: { type: GraphQLInt },
@@ -69,21 +69,21 @@ const mutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: {
     addDiscussionByUrl: {
-      type: discussionType,
+      type: new GraphQLNonNull(discussionType),
       args: {
         url: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (...args) => graphQLResolver(createDiscussionByUrlAsync, ...args),
     },
     deleteDiscussion: {
-      type: GraphQLBoolean,
+      type: new GraphQLNonNull(GraphQLBoolean),
       args: {
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (...args) => graphQLResolver(deleteDiscussionAsync, ...args),
     },
     editDiscussion: {
-      type: GraphQLBoolean,
+      type: new GraphQLNonNull(discussionType),
       args: {
         newTitle: { type: GraphQLString },
         newDescription: { type: GraphQLString },
@@ -92,7 +92,7 @@ const mutationType = new GraphQLObjectType({
       resolve: (...args) => graphQLResolver(editDiscussionAsync, ...args),
     },
     postComment: {
-      type: GraphQLBoolean,
+      type: new GraphQLNonNull(GraphQLBoolean),
       args: {
         text: { type: new GraphQLNonNull(GraphQLString) },
         discussionId: { type: new GraphQLNonNull(GraphQLString) },
@@ -100,14 +100,14 @@ const mutationType = new GraphQLObjectType({
       resolve: (...args) => graphQLResolver(postCommentAsync, ...args),
     },
     deleteComment: {
-      type: GraphQLBoolean,
+      type: new GraphQLNonNull(GraphQLBoolean),
       args: {
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (...args) => graphQLResolver(deleteCommentAsync, ...args),
     },
     editComment: {
-      type: GraphQLBoolean,
+      type: new GraphQLNonNull(GraphQLBoolean),
       args: {
         newText: { type: new GraphQLNonNull(GraphQLString) },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
@@ -115,7 +115,7 @@ const mutationType = new GraphQLObjectType({
       resolve: (...args) => graphQLResolver(editCommentAsync, ...args),
     },
     agreeOrDisagree: {
-      type: GraphQLBoolean,
+      type: new GraphQLNonNull(new GraphQLList(GraphQLString)),
       args: {
         isAgree: { type: new GraphQLNonNull(GraphQLBoolean) },
         isDiscussion: { type: new GraphQLNonNull(GraphQLBoolean) },
@@ -131,7 +131,7 @@ module.exports = new GraphQLSchema({ query: queryType, mutation: mutationType })
 /**
  * @param {Function} queryHandler
  * @param {any[]} args
- * @returns {Promise}
+ * @return {Promise}
  */
 function graphQLResolver(queryHandler, ...args) {
   const [, queryArgs, , info] = args;

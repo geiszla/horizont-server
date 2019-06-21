@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const shortid = require('shortid');
 
 mongoose.Promise = Promise;
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
 
 
 /* ----------------------------------- Database Communication ----------------------------------- */

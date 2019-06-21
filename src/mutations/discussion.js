@@ -38,7 +38,7 @@ exports.agreeOrDisagreeAsync = async ({ isAgree, isDiscussion, shortId }, resolv
 /* -------------------------------- Discussion Request Handlers --------------------------------- */
 
 /**
- * @type {GraphQLResolver<{ url: string }, import('mongoose').Document>}
+ * @type {GraphQLResolver<{ url: string }, MongooseDocument>}
  */
 exports.createDiscussionByUrlAsync = async ({ url }, resolve, reject) => {
   const processedUrlString = addHttp(url).replace(/[/\s]+$/, '');
@@ -95,8 +95,8 @@ exports.createDiscussionByUrlAsync = async ({ url }, resolve, reject) => {
  */
 exports.deleteDiscussionAsync = async ({ shortId }, resolve, reject) => {
   try {
-    await Discussion.deleteOne({ shortId }).exec();
-    resolve(true);
+    const { n } = await Discussion.deleteOne({ shortId }).exec();
+    resolve(n > 0);
   } catch (error) {
     reject(error, 'Couldn\'t delete discussion.');
   }
@@ -121,8 +121,8 @@ exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, reso
       }
     }
 
-    await Discussion.updateOne({ shortId }, updateOptions).exec();
-    resolve(true);
+    const { n } = await Discussion.updateOne({ shortId }, updateOptions).exec();
+    resolve(n > 0);
   } catch (error) {
     reject(error, 'Couldn\'t edit discussion.');
   }
@@ -136,11 +136,11 @@ exports.editDiscussionAsync = async ({ newTitle, newDescription, shortId }, reso
  */
 exports.postCommentAsync = async ({ text, discussionId }, resolve, reject) => {
   try {
-    await Discussion.updateOne({ shortId: discussionId }, {
+    const { n } = await Discussion.updateOne({ shortId: discussionId }, {
       $push: { comments: { text, ownerUsername: 'testuser' } },
     }).exec();
 
-    resolve(true);
+    resolve(n > 0);
   } catch (error) {
     reject(error, 'Couldn\'t post comment.');
   }
@@ -151,11 +151,11 @@ exports.postCommentAsync = async ({ text, discussionId }, resolve, reject) => {
  */
 exports.deleteCommentAsync = async ({ shortId }, resolve, reject) => {
   try {
-    await Discussion.updateOne({ 'comments.shortId': shortId }, {
+    const { n } = await Discussion.updateOne({ 'comments.shortId': shortId }, {
       $pull: { comments: { shortId } },
     }).exec();
 
-    resolve(true);
+    resolve(n > 0);
   } catch (error) {
     reject(error, 'Couldn\'t delete comment.');
   }
@@ -166,14 +166,14 @@ exports.deleteCommentAsync = async ({ shortId }, resolve, reject) => {
  */
 exports.editCommentAsync = async ({ newText, shortId }, resolve, reject) => {
   try {
-    await Discussion.updateOne({ 'comments.shortId': shortId }, {
+    const { n } = await Discussion.updateOne({ 'comments.shortId': shortId }, {
       $set: {
         'comments.$.text': newText,
         'comments.$.lastEditedAt': new Date(),
       },
     }).exec();
 
-    resolve(true);
+    resolve(n > 0);
   } catch (error) {
     reject(error, 'Couldn\'t edit comment.');
   }
