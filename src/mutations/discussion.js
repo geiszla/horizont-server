@@ -12,26 +12,28 @@ const request = requestPromise.defaults({
 });
 
 /**
- * @type {GraphQLResolver<{ shortId: string, isAgree: boolean }, boolean>}
+ * @type {GraphQLResolver<{ isAgree: boolean, isDiscussion: boolean, shortId: string }, boolean>}
  */
-exports.agreeOrDisagreeAsync = async ({ shortId, isAgree }, resolve, reject) => {
+exports.agreeOrDisagreeAsync = async ({ isAgree, isDiscussion, shortId }, resolve, reject) => {
   try {
-    const discussionUpdate = {};
-    discussionUpdate[isAgree ? 'agreedUsernames' : 'disagreedUsernames'] = { $push: 'testuser' };
+    const queryOptions = {};
+    queryOptions[isDiscussion ? 'shortId' : 'comments.shortId'] = shortId;
 
-    await Discussion.updateOne({ $or: [{ shortId }, { 'comments.shortId': shortId }] }, {
-      $cond: {
-        if: { shortId },
-        then: discussionUpdate,
-        else: { comments: { $elemMatch: { shortId }, discussionUpdate } },
-      },
-    }).exec();
+    const agreedField = isDiscussion ? 'agreedUsernames' : 'comments.$.agreedUsernames';
+    const disagreedField = isDiscussion ? 'disagreedUsernames' : 'comments.$.disagreedUsernames';
+
+    const discussionUpdate = { $addToSet: {}, $pull: {} };
+    discussionUpdate.$addToSet[isAgree ? agreedField : disagreedField] = 'testuser';
+    discussionUpdate.$pull[isAgree ? disagreedField : agreedField] = 'testuser';
+
+    await Discussion.updateOne(queryOptions, discussionUpdate).exec();
 
     resolve(true);
   } catch (error) {
-    reject(error, 'Couldn\'t delete discussion.');
+    reject(error, 'Couldn\'t set agreement/disagreement.');
   }
 };
+
 
 /* -------------------------------- Discussion Request Handlers --------------------------------- */
 
@@ -76,24 +78,7 @@ exports.createDiscussionByUrlAsync = async ({ url }, resolve, reject) => {
     resolve(newDiscussion);
     newDiscussion.save();
 
-    // Update other discussions and news sources
-    if (pageData !== existingDiscussion) {
-      const newPageData = await getPageDataAsync(urlObject.href);
-
-      // Update outdated page data in existing discussions
-      const differenceObject = {};
-      Object.entries(pageData).forEach(([key, value]) => {
-        if (newPageData[key] !== value) {
-          differenceObject[key] = newPageData[key];
-        }
-      });
-
-      if (Object.keys(differenceObject).length > 0) {
-        printVerbose('[Discussion] Updating existing discussions.');
-        await Discussion.updateOne({ url: urlObject.href }, differenceObject);
-      }
-    }
-
+    // Update news source with new article
     const sourceUrl = addHttp(urlObject.hostname);
     await NewsSource.updateOne({
       url: sourceUrl,

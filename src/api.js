@@ -118,6 +118,7 @@ const mutationType = new GraphQLObjectType({
       type: GraphQLBoolean,
       args: {
         isAgree: { type: new GraphQLNonNull(GraphQLBoolean) },
+        isDiscussion: { type: new GraphQLNonNull(GraphQLBoolean) },
         shortId: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve: (...args) => graphQLResolver(agreeOrDisagreeAsync, ...args),
