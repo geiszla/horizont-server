@@ -124,7 +124,7 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
       printError(`Error while processing GraphQL request: ${error.message}`);
       printVerbose(error);
 
-      return false;
+      return error;
     } : undefined,
   })));
 
