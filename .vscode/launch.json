@@ -7,9 +7,18 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Start",
       "program": "${workspaceFolder}\\src\\main.js",
       "args": ["verbose"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test",
+      "cwd": "${workspaceRoot}",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["test:dbg"],
+      "port": 5858
     }
   ]
 }

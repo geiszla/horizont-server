@@ -13,7 +13,9 @@
     "dev": "nodemon src/main.js",
     "dev:v": "nodemon src/main.js verbose",
     "pm": "pm2",
-    "test": "mocha test/*.test.js --timeout 5000"
+    "test": "mocha test/*.test.js --timeout 5000",
+    "test:dev": "nodemon --exec \"mocha test/*.test.js --timeout 5000\" --watch test",
+    "test:dbg": "mocha test/*.test.js --timeout 5000 --nolazy --debug-brk=5858"
   },
   "license": "MIT",
   "dependencies": {

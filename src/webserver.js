@@ -13,7 +13,7 @@ const session = require('express-session');
 const { execute } = require('graphql');
 
 const {
-  graphQueryLogger,
+  graphQueryLogger: graphQLQueryLogger,
   graphResponseLogger,
   morganGenerator,
   print,
@@ -88,7 +88,11 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
 
   // Create Express application
   const app = express();
-  app.use(morgan(morganGenerator));
+
+  if (isLoggingEnabled) {
+    app.use(morgan(morganGenerator));
+  }
+
   app.use(compression());
 
   // Additional express middlewares
@@ -103,7 +107,7 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
   app.use((_, res, next) => {
     // @ts-ignore
     res.send = new Proxy(res.send, {
-      apply: graphResponseLogger,
+      apply: isLoggingEnabled ? graphResponseLogger : undefined,
     });
 
     next();
@@ -114,12 +118,14 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
     schema: graphQLSchema,
     rootValue: { session: request.session },
     graphiql: !process.argv.includes('production'),
-    customExecuteFn: executionArgs => graphQueryLogger(executionArgs, execute),
-    customFormatErrorFn(error) {
+    customExecuteFn: isLoggingEnabled ? executionArgs => graphQLQueryLogger(executionArgs, execute)
+      : undefined,
+    customFormatErrorFn: isLoggingEnabled ? (error) => {
       printError(`Error while processing GraphQL request: ${error.message}`);
       printVerbose(error);
+
       return false;
-    },
+    } : undefined,
   })));
 
   return app;
