@@ -19,7 +19,7 @@ const {
   print,
   printError,
   printVerbose,
-  setVerbosity,
+  setLogLevel,
 } = require('./log');
 
 const database = require('./data');
@@ -28,17 +28,14 @@ const graphQLSchema = require('./api');
 /**
  * @param {{
   *  databaseAddress: string;
-  *  isLoggingEnabled: boolean;
-  *  isVerbose: boolean;
+  *  logLevel: number;
   *  port: number;
   * }} options
   */
 exports.startWebserverAsync = async (options) => {
-  const {
-    databaseAddress, isLoggingEnabled, isVerbose, port,
-  } = options;
+  const { databaseAddress, logLevel, port } = options;
 
-  const app = await exports.createWebserverAsync(isLoggingEnabled, isVerbose, databaseAddress);
+  const app = await exports.createWebserverAsync(databaseAddress, logLevel);
 
   // Start HTTP 2 Secure Webserver
   const secureOptions = {
@@ -48,7 +45,7 @@ exports.startWebserverAsync = async (options) => {
   };
 
   https.createServer(secureOptions, app).listen(port, () => {
-    if (isLoggingEnabled) {
+    if (logLevel > 0) {
       const url = chalk.blue(`https://localhost:${port}/\n`);
       print(`Webserver is listening at ${url}`);
     } else if (typeof process.send === 'function') {
@@ -58,18 +55,15 @@ exports.startWebserverAsync = async (options) => {
 };
 
 /**
- * @param {boolean} isLoggingEnabled
- * @param {boolean} isVerbose
  * @param {string} databaseAddress
+ * @param {number} logLevel
  */
-exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddress) => {
-  // Connect to MongoDB Database
-  if (isLoggingEnabled) {
-    print('Connecting to the database....\n');
-  }
+exports.createWebserverAsync = async (databaseAddress, logLevel = 0) => {
+  setLogLevel(logLevel);
 
-  if (isVerbose) {
-    setVerbosity(true);
+  // Connect to MongoDB Database
+  if (logLevel > 0) {
+    print('Connecting to the database....\n');
   }
 
   try {
@@ -79,7 +73,7 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
     process.exit(1);
   }
 
-  if (isLoggingEnabled) {
+  if (logLevel > 0) {
     const url = chalk.blue(`mongodb://${databaseAddress}/`);
     print(`Connected to MongoDB server at ${url}`);
   } else if (typeof process.send === 'function') {
@@ -89,7 +83,7 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
   // Create Express application
   const app = express();
 
-  if (isLoggingEnabled) {
+  if (logLevel > 0) {
     app.use(morgan(morganGenerator));
   }
 
@@ -107,7 +101,7 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
   app.use((_, res, next) => {
     // @ts-ignore
     res.send = new Proxy(res.send, {
-      apply: isLoggingEnabled ? graphResponseLogger : undefined,
+      apply: logLevel > 0 ? graphResponseLogger : undefined,
     });
 
     next();
@@ -118,11 +112,11 @@ exports.createWebserverAsync = async (isLoggingEnabled, isVerbose, databaseAddre
     schema: graphQLSchema,
     rootValue: { session: request.session },
     graphiql: !process.argv.includes('production'),
-    customExecuteFn: isLoggingEnabled ? executionArgs => graphQLQueryLogger(executionArgs, execute)
+    customExecuteFn: logLevel > 0 ? executionArgs => graphQLQueryLogger(executionArgs, execute)
       : undefined,
-    customFormatErrorFn: isLoggingEnabled ? (error) => {
+    customFormatErrorFn: logLevel > 0 ? (error) => {
       printError(`Error while processing GraphQL request: ${error.message}`);
-      printVerbose(error);
+      printVerbose(error.stack);
 
       return error;
     } : undefined,

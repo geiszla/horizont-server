@@ -139,7 +139,7 @@ function graphQLResolver(queryHandler, ...args) {
   return new Promise((resolve, reject) => {
     const loggerReject = (error, message) => {
       if (error) {
-        printVerbose(error);
+        printVerbose(error.stack);
       }
 
       reject(new Error(message));

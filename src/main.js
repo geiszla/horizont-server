@@ -31,12 +31,20 @@ if (isProduction && cluster.isMaster) {
     setWorkerId(cluster.worker.process.pid);
   }
 
+  let logLevel = 0;
+  if (!isProduction || (cluster.worker && cluster.worker.id > cpuCount)) {
+    logLevel++;
+
+    if (process.argv.includes('verbose')) {
+      logLevel++;
+    }
+  }
+
   // Run server setup
   const serverOptions = {
-    isLoggingEnabled: !isProduction || (cluster.worker && cluster.worker.id > cpuCount),
-    isVerbose: process.argv.includes('verbose'),
     port: webserverPort,
     databaseAddress,
+    logLevel,
   };
 
   startWebserverAsync(serverOptions);

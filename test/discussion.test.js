@@ -8,7 +8,7 @@ const databaseAddress = 'localhost:27017';
 let app;
 
 before(async () => {
-  app = await createWebserverAsync(false, false, databaseAddress);
+  app = await createWebserverAsync(databaseAddress);
 });
 
 describe('Discussions', () => {

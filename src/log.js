@@ -23,8 +23,8 @@ const statusColors = Object.freeze({
 /** @type {number} */
 let workerId;
 
-/** @type {boolean} */
-let isVerbose;
+/** @type {number} */
+let logLevel;
 
 
 /* ------------------------------------------ Exports ------------------------------------------- */
@@ -34,14 +34,14 @@ exports.setWorkerId = (id) => {
   workerId = id;
 };
 
-/** @param {boolean} verbosity */
-exports.setVerbosity = (verbosity) => {
-  isVerbose = verbosity;
+/** @param {number} newLogLevel */
+exports.setLogLevel = (newLogLevel) => {
+  logLevel = newLogLevel;
 };
 
 /** @param {any[]} args */
 exports.printVerbose = (...args) => {
-  if (isVerbose) {
+  if (logLevel > 1) {
     outputToConsole('info', ...args);
   }
 };
@@ -106,7 +106,7 @@ function requestLogGenerator(tokens, ...requestResponse) {
   // Append more request metadata to the message
   let metadata = `response: { time: ${timeText}, size: ${sizeText} }`;
 
-  if (process.argv.includes('production') || isVerbose) {
+  if (process.argv.includes('production') || logLevel > 1) {
     // Add more information if it's in production mode or verbosity is set
     metadata += [
       '',
@@ -137,7 +137,11 @@ function graphQueryLogger(executionArgs, originalExecutor) {
     const queryGroups = concatenateLines(queryString).match(/(query|mutation) ([^\s]+) (.*)/);
 
     if (queryGroups) {
-      exports.print(`GraphQL API request: ${chalk.blue(queryGroups[1])} ${chalk.yellow(queryGroups[2])} ${highlightJSON(queryGroups[3])}`);
+      const queryTypeText = chalk.blue(queryGroups[1]);
+      const operationNameText = chalk.yellow(queryGroups[2]);
+      const requestBody = highlightJSON(queryGroups[3]);
+
+      exports.print(`GraphQL API request: ${queryTypeText} ${operationNameText} ${requestBody}`);
     }
   }
 
@@ -153,12 +157,12 @@ function graphResponseLogger(target, thisArg, argumentsList) {
   const graphQLResponse = JSON.stringify(JSON.parse(argumentsList[0]), null, 2);
 
   if (graphQLResponse.length > 150 && graphQLResponse.length < 1024) {
-    if (isVerbose) {
+    if (logLevel > 1) {
       exports.printVerbose(`GraphQL response: ${highlightJSON(graphQLResponse)}`);
     } else {
       exports.print('GraphQL response too long. Run in verbose mode to log all responses.');
     }
-  } else if (graphQLResponse.length < 150 || isVerbose) {
+  } else if (graphQLResponse.length < 150 || logLevel > 1) {
     exports.print(`GraphQL response: ${highlightJSON(concatenateLines(graphQLResponse))}`);
   }
 
