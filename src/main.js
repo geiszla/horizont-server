@@ -1,6 +1,7 @@
 const cluster = require('cluster');
-const cpuCount = require('physical-cpu-count');
 global.Promise = require('bluebird');
+
+const { databaseAddress } = require('../appconfig.json');
 
 // Set up error handling before local modules are loaded
 require('./error');
@@ -8,11 +9,13 @@ require('./error');
 const { print, printError, setWorkerId } = require('./log');
 const { startWebserverAsync } = require('./webserver');
 
+// Google Cloud CPU limit
+const cpuCount = 8;
+
 
 /* -------------------------------------- Global Constants -------------------------------------- */
 
-const webserverPort = 8080;
-const databaseAddress = 'localhost:27017';
+const webserverPort = parseInt(process.env.PORT, 10) || 8080;
 const isProduction = process.argv[2] === 'production';
 
 
@@ -43,7 +46,7 @@ if (isProduction && cluster.isMaster) {
   // Run server setup
   const serverOptions = {
     port: webserverPort,
-    databaseAddress,
+    databaseAddress: isProduction ? databaseAddress : 'mongodb://localhost:27017',
     logLevel,
   };
 

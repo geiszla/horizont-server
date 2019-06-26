@@ -2,13 +2,14 @@ const { expect } = require('chai');
 const request = require('supertest');
 
 const { createWebserverAsync } = require('../src/webserver');
+const { testDatabaseAddress } = require('../appconfig.json');
 
-// DO NOT point to live database
-const databaseAddress = 'localhost:27017';
+/** @type {import('express').Express} */
 let app;
 
 before(async () => {
-  app = await createWebserverAsync(databaseAddress);
+  console.log(testDatabaseAddress);
+  app = await createWebserverAsync(testDatabaseAddress);
 });
 
 describe('Discussions', () => {

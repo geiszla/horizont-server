@@ -7,7 +7,7 @@
     "url": ""
   },
   "scripts": {
-    "start": "pm2 start src/main.js -- production && pm2 monit",
+    "start": "pm2 start src/main.js -- production",
     "stop": "pm2 stop src/main.js",
     "prodtest": "node src/main production",
     "dev": "nodemon src/main.js",

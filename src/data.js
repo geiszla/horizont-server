@@ -14,7 +14,7 @@ mongoose.set('useCreateIndex', true);
  * @return {Promise<void>}
  */
 exports.connectAsync = async (address) => {
-  await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
+  await mongoose.connect(`${address}/horizont`, { useNewUrlParser: true });
 };
 
 
