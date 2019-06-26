@@ -5,4 +5,4 @@ steps:
   args: ['test']
 - name: "gcr.io/cloud-builders/gcloud"
   args: ["start:dev"]
-  timeout: "1600s"
+  timeout: "10m0s"
