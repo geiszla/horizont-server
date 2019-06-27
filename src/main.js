@@ -1,120 +1,48 @@
-const cluster = require('cluster');
-global.Promise = require('bluebird');
+require('@google-cloud/debug-agent').start();
+
+/** @type {object} chalk */
+const chalk = require('chalk');
 
 const { databaseAddress } = require('../appconfig.json');
 
-// Set up error handling before local modules are loaded
-require('./error');
-
-const { print, printError, setWorkerId } = require('./log');
-const { startWebserverAsync } = require('./webserver');
-
-// Google Cloud CPU limit
-const cpuCount = 8;
+const { print } = require('./log');
+const { createWebserverAsync } = require('./webserver');
+const { startWithClusteringAsync } = require('./cluster');
 
 
 /* -------------------------------------- Global Constants -------------------------------------- */
 
-const webserverPort = parseInt(process.env.PORT, 10) || 8080;
-const isProduction = process.argv[2] === 'production';
+const PORT = parseInt(process.env.PORT, 10) || 8080;
+const IS_PRODUCTION = process.argv.includes('--production');
+const IS_CLUSTERING = false;
 
 
-/* ----------------------------------------- Clustering ----------------------------------------- */
+/* ------------------------------------------ Startup ------------------------------------------- */
 
-const workers = [];
-if (isProduction && cluster.isMaster) {
-  // If this is the master, set its id to 0 and spawn workers (only production)
-  setWorkerId(0);
-  setUpWorkers();
-} else {
-  // If this is a worker, or development environment
-
-  // Set worker id to its process id (only production)
-  if (process.argv.includes('production')) {
-    setWorkerId(cluster.worker.process.pid);
-  }
-
-  let logLevel = 0;
-  if (!isProduction || (cluster.worker && cluster.worker.id > cpuCount)) {
-    logLevel++;
-
-    if (process.argv.includes('verbose')) {
-      logLevel++;
+(async () => {
+  if (IS_CLUSTERING) {
+    startWithClusteringAsync(IS_PRODUCTION, PORT);
+  } else {
+    let logLevel = 0;
+    if (!IS_PRODUCTION) {
+      logLevel = process.argv.includes('--verbose') ? 2 : 1;
     }
+
+    // Start Webserver
+    startWebserverAsync(2);
   }
+})();
 
-  // Run server setup
-  const serverOptions = {
-    port: webserverPort,
-    databaseAddress: isProduction ? databaseAddress : 'mongodb://localhost:27017',
-    logLevel,
-  };
-
-  startWebserverAsync(serverOptions);
-}
-
-function setUpWorkers() {
-  print(`Starting ${cpuCount} workers...`);
-
-  // Create same number of workers as CPU cores available
-  for (let i = 0; i < cpuCount; i++) {
-    workers.push(cluster.fork());
-
-    workers[i].on('message', handleWorkerMessage);
-  }
-
-  // Log it when all workers are online
-  cluster.on('online', () => {
-    if (workers.every(worker => worker.state === 'online')) {
-      print('All workers started, starting server...\n');
-    }
-  });
-
-  // Log it when a worker exits and create a new one in its place
-  cluster.on('exit', (worker, code, signal) => {
-    printError(`Worker ${worker.process.pid} exited with code ${code}, and signal ${signal}`);
-
-    workers.push(cluster.fork());
-    print('Creating new worker:', workers[workers.length - 1].process.pid);
-
-    workers[workers.length - 1].on('message', handleWorkerMessage);
-  });
-}
-
-
-/* ----------------------------------- Worker Message Handling ---------------------------------- */
-
-let dbConnectionCount = 0;
-let webserverInstanceCount = 0;
+/* ------------------------------------------ Helpers ------------------------------------------- */
 
 /**
- * @param {{ type: string; data: string; }} message
+ * @param {number} logLevel
  */
-function handleWorkerMessage(message) {
-  if (!message) {
-    return;
-  }
+async function startWebserverAsync(logLevel) {
+  const app = await createWebserverAsync(databaseAddress, logLevel);
 
-  const { type, data } = message;
-
-  // Filter PM2 monitoring messages
-  if (typeof type === 'string' && type.startsWith('axm:')) {
-    return;
-  }
-
-  if (type === 'database' && data === 'connected') {
-    // Count workers connected to database and log it when all are connected
-    dbConnectionCount++;
-
-    if (dbConnectionCount === cpuCount) {
-      print(`All workers connected to MongoDB server at mongodb://${databaseAddress}/`);
-    }
-  } else if (type === 'webserver' && data === 'online') {
-    // Count workers connected to the webserver and log it when all are connected
-    webserverInstanceCount++;
-
-    if (webserverInstanceCount === cpuCount) {
-      print(`Webserver started at https://localhost:${webserverPort}/ - All workers are up.\n`);
-    }
-  }
+  app.listen(PORT, () => {
+    const url = chalk.blue(`https://localhost:${PORT}/\n`);
+    print(`Webserver is listening at ${url}`);
+  });
 }

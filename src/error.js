@@ -39,8 +39,10 @@ process.on('rejectionHandled', /** @param {Bluebird} promise */ (promise) => {
 // Log all unhandled rejections before exiting
 process.on('exit', () => {
   if (unhandledPromises.length > 0) {
-    const rejectionReasons = unhandledPromises.map(promise => promise.reason.toString());
-    printWarning('Unhandled rejections before exiting:', ...rejectionReasons);
+    printWarning('Unhandled rejections before exiting:');
+
+    unhandledPromises.map(promise => promise.reason.toString())
+      .forEach(reason => printWarning(reason));
   }
 });
 

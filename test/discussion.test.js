@@ -1,6 +1,9 @@
 const { expect } = require('chai');
 const request = require('supertest');
 
+// Set up error handling before local modules are loaded
+require('../src/error');
+
 const { createWebserverAsync } = require('../src/webserver');
 const { testDatabaseAddress } = require('../appconfig.json');
 
@@ -8,8 +11,10 @@ const { testDatabaseAddress } = require('../appconfig.json');
 let app;
 
 before(async () => {
-  console.log(testDatabaseAddress);
-  app = await createWebserverAsync(testDatabaseAddress);
+  const isProduction = process.argv.includes('--production');
+  const databaseAddress = isProduction ? testDatabaseAddress : 'mongodb://localhost:27017';
+
+  app = await createWebserverAsync(databaseAddress, 1);
 });
 
 describe('Discussions', () => {

@@ -128,6 +128,9 @@ const mutationType = new GraphQLObjectType({
 
 module.exports = new GraphQLSchema({ query: queryType, mutation: mutationType });
 
+
+/* ------------------------------------------ Helpers ------------------------------------------- */
+
 /**
  * @param {Function} queryHandler
  * @param {any[]} args

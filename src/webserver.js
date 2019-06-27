@@ -1,16 +1,21 @@
+global.Promise = require('bluebird');
+
 const bodyParser = require('body-parser');
 /** @type {object} chalk */
 const chalk = require('chalk');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
+const { Datastore } = require('@google-cloud/datastore');
 const express = require('express');
-const fs = require('fs');
 const graphqlHTTP = require('express-graphql');
-const https = require('https');
 const morgan = require('morgan');
-const path = require('path');
 const session = require('express-session');
 const { execute } = require('graphql');
+
+const DatastoreStore = require('@google-cloud/connect-datastore')(session);
+
+// Set up error handling before local modules are loaded
+require('./error');
 
 const {
   graphQueryLogger: graphQLQueryLogger,
@@ -25,34 +30,7 @@ const {
 const database = require('./data');
 const graphQLSchema = require('./api');
 
-/**
- * @param {{
-  *  databaseAddress: string;
-  *  logLevel: number;
-  *  port: number;
-  * }} options
-  */
-exports.startWebserverAsync = async (options) => {
-  const { databaseAddress, logLevel, port } = options;
-
-  const app = await exports.createWebserverAsync(databaseAddress, logLevel);
-
-  // Start HTTP 2 Secure Webserver
-  const secureOptions = {
-    key: fs.readFileSync(path.join(__dirname, '../ssl/key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, '../ssl/cert.crt')),
-    passphrase: 'iManT',
-  };
-
-  https.createServer(secureOptions, app).listen(port, () => {
-    if (logLevel > 0) {
-      const url = chalk.blue(`https://localhost:${port}/\n`);
-      print(`Webserver is listening at ${url}`);
-    } else if (typeof process.send === 'function') {
-      process.send({ type: 'webserver', data: 'online' });
-    }
-  });
-};
+const isProduction = process.argv.includes('--production');
 
 /**
  * @param {string} databaseAddress
@@ -74,8 +52,7 @@ exports.createWebserverAsync = async (databaseAddress, logLevel = 0) => {
   }
 
   if (logLevel > 0) {
-    const url = chalk.blue(`mongodb://${databaseAddress}/`);
-    print(`Connected to MongoDB server at ${url}`);
+    print(`Connected to MongoDB server at ${chalk.blue(databaseAddress)}`);
   } else if (typeof process.send === 'function') {
     process.send({ type: 'database', data: 'connected' });
   }
@@ -96,6 +73,7 @@ exports.createWebserverAsync = async (databaseAddress, logLevel = 0) => {
     secret: '98414c22d7e2cf27b3317ca7e19df38e9eb221bd',
     resave: true,
     saveUninitialized: false,
+    store: isProduction ? new DatastoreStore({ dataset: new Datastore() }) : undefined,
   }));
 
   app.use((_, res, next) => {
@@ -111,7 +89,7 @@ exports.createWebserverAsync = async (databaseAddress, logLevel = 0) => {
   app.use('/api', graphqlHTTP(request => ({
     schema: graphQLSchema,
     rootValue: { session: request.session },
-    graphiql: !process.argv.includes('production'),
+    graphiql: true, //! isProduction,
     customExecuteFn: logLevel > 0 ? executionArgs => graphQLQueryLogger(executionArgs, execute)
       : undefined,
     customFormatErrorFn: logLevel > 0 ? (error) => {
