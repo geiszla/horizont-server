@@ -13,8 +13,7 @@
     "pm": "pm2",
     "pm:start": "pm2 start src/main.js -- --production",
     "pm:stop": "pm2 stop src/main.js",
-    "mocha": "mocha test/*.test.js --timeout 5000 --exit",
-    "test": "yarn mocha --production",
+    "test": "mocha test/*.test.js --timeout 5000 --exit",
     "test:dev": "nodemon --exec \"yarn mocha\" --watch test",
     "test:dbg": "yarn mocha --nolazy --debug-brk=5858"
   },
