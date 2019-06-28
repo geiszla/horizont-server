@@ -1,14 +1,20 @@
 const { expect } = require('chai');
 const request = require('supertest');
 
-const { createWebserverAsync } = require('../src/webserver');
+// Set up error handling before local modules are loaded
+require('../src/error');
 
-// DO NOT point to live database
-const databaseAddress = 'localhost:27017';
+const { createWebserverAsync } = require('../src/webserver');
+const { testDatabaseAddress } = require('../appconfig.json');
+
+/** @type {import('express').Express} */
 let app;
 
 before(async () => {
-  app = await createWebserverAsync(databaseAddress);
+  const isProduction = process.argv.includes('--production');
+  const databaseAddress = isProduction ? testDatabaseAddress : 'mongodb://localhost:27017';
+
+  app = await createWebserverAsync(databaseAddress, 1);
 });
 
 describe('Discussions', () => {

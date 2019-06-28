@@ -5,9 +5,9 @@ const { highlight } = require('cli-highlight');
 
 /* ------------------------------------------ Globals ------------------------------------------- */
 
-const localeOptions = Object.freeze({ hour12: false });
+const LOCALE_OPTIONS = Object.freeze({ hour12: false });
 
-const prefixes = Object.freeze({
+const PREFIXES = Object.freeze({
   error: '❌',
   info: '✏️',
   log: '⚪',
@@ -15,7 +15,7 @@ const prefixes = Object.freeze({
   request: '⚡',
 });
 
-const statusColors = Object.freeze({
+const STATUS_COLORS = Object.freeze({
   2: 'green',
   3: 'cyan',
 });
@@ -77,7 +77,7 @@ function requestLogGenerator(tokens, ...requestResponse) {
   if (!statusCode) {
     return '';
   }
-  const statusText = ` [${chalk[statusColors[statusCode[0]] || 'red'](statusCode)}]`;
+  const statusText = ` [${chalk[STATUS_COLORS[statusCode[0]] || 'red'](statusCode)}]`;
 
   const message = [
     generatePrefix('request') + statusText,
@@ -190,10 +190,10 @@ function outputToConsole(methodName, ...args) {
  */
 function generatePrefix(methodName) {
   // Build prefix from time, log type and worker ID (if exists)
-  const timeStamp = chalk.cyan.bold(new Date().toLocaleString('en-US', localeOptions));
+  const timeStamp = chalk.cyan.bold(new Date().toLocaleString('en-US', LOCALE_OPTIONS));
   const workerPrefix = workerId ? ` [${workerId}]` : '';
 
-  return `${timeStamp}${workerPrefix} ${prefixes[methodName]} `;
+  return `${timeStamp}${workerPrefix} ${PREFIXES[methodName]} `;
 }
 
 /**

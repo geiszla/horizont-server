@@ -1,3 +1,6 @@
+# Server Configuration
+appconfig.json
+
 # Logs
 logs
 *.log

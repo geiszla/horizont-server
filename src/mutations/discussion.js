@@ -7,9 +7,12 @@ const { printVerbose } = require('../log');
 
 // Request options
 const request = requestPromise.defaults({
-  proxy: 'http://localhost:3128/',
+  proxy: process.argv.includes('--production') ? undefined : 'http://localhost:3128/',
   headers: { 'User-Agent': 'Horizont-News' },
 });
+
+
+/* ---------------------------------- Common Request Handlers ----------------------------------- */
 
 /**
  * @type {GraphQLResolver<{ isAgree: boolean, isDiscussion: boolean, shortId: string }, boolean>}

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const shortid = require('shortid');
 
-mongoose.Promise = Promise;
+mongoose.Promise = global.Promise;
 mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
@@ -14,7 +14,9 @@ mongoose.set('useCreateIndex', true);
  * @return {Promise<void>}
  */
 exports.connectAsync = async (address) => {
-  await mongoose.connect(`mongodb://${address}/horizont`, { useNewUrlParser: true });
+  await mongoose.connect(`${address}/horizont?retryWrites=true&w=majority`, {
+    useNewUrlParser: true,
+  });
 };
 
 
