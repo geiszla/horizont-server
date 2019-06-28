@@ -1,7 +1,7 @@
 steps:
-- name: "gcr.io/cloud-builders/yarn"
+- name: "gcr.io/cloud-builders/yarn:10.15.1"
   args: ["install", "--production", "--ignore-engines"]
-- name: "gcr.io/cloud-builders/yarn"
+- name: "gcr.io/cloud-builders/yarn:10.15.1"
   args: ["test", "--production"]
 - name: "gcr.io/cloud-builders/gcloud"
   args: ["app", "deploy"]
