@@ -1,4 +1,6 @@
 steps:
+- name: "gcr.io/cloud-builders/node"
+  args: ["--version"]
 - name: "gcr.io/cloud-builders/yarn"
   args: ["install", "--production"]
 - name: "gcr.io/cloud-builders/yarn"
