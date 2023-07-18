@@ -40,7 +40,7 @@
     "graphql-compose": "^7.1.0",
     "graphql-compose-mongoose": "^7.0.3",
     "mocha": "^6.1.4",
-    "mongoose": "^5.13.15",
+    "mongoose": "^5.13.20",
     "morgan": "^1.9.1",
     "nodemon": "^1.19.1",
     "page-metadata-parser": "^1.1.3",
